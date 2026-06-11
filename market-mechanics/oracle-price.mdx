@@ -9,29 +9,31 @@ The oracle serves two functions:
 1. The reference price for funding.
 2. A direct input to the mark price.
 
-Scape extends a metals oracle to operate 24/7, beyond the trading sessions of the Shanghai
-underlying. When Chinese metals markets are open, the oracle follows the external SMM print.
-When they are closed, an internal mechanism takes over.
+Scape extends a commodity oracle to operate 24/7, beyond the trading sessions of the
+underlying regional market. When the underlying market is open, the oracle follows the
+external assessment print. When it is closed, an internal mechanism takes over.
 
 ## External Pricing
 
-The oracle is derived from [Shanghai Metals Market](https://www.metal.com) (SMM) CNY composite
-spot feeds, assessed on a 500ms cadence. [SEDA Protocol](https://seda.xyz) validates and
-pushes the price to Hyperliquid every ~3 seconds. No FX conversion is applied — the oracle is
-CNY-quoted end to end.
+The oracle is derived from composite spot assessments published by Scape's reporter network.
+[SEDA Protocol](https://seda.xyz) validates and pushes the price to Hyperliquid every ~3
+seconds. No FX conversion is applied — the oracle is quoted in the underlying market's local
+currency end to end.
 
-While SMM is publishing, the externally derived CNY price is transmitted as the oracle price.
+While the assessment is publishing, the externally derived local-currency price is
+transmitted as the oracle price.
 
 ## Internal Pricing
 
-Chinese metals markets close overnight (UTC), on weekends, and on national holidays — gaps of
-up to 10 days. During closure:
+Regional markets close overnight, on weekends, and on public holidays — sometimes for
+multiple consecutive days. During closure:
 
-- The oracle **holds the last printed SMM value** as its anchor.
+- The oracle **holds the last external print** as its anchor.
 - A continuous-time EMA (CT-EMA) on the perp mid bounds drift from that held anchor.
 
-The Hyperliquid order book drives discovery during the closure. On reopen, SMM resumes and any
-dislocation between the perp and the fresh print pays through [funding](/market-mechanics/funding).
+The Hyperliquid order book drives discovery during the closure. On reopen, the external
+assessment resumes and any dislocation between the perp and the fresh print pays through
+[funding](/market-mechanics/funding).
 
 ## Safety
 

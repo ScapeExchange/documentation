@@ -4,79 +4,58 @@ sidebarTitle: Commodities
 description: Commodity assets supported on Scape.
 ---
 
-Scape lists three Chinese metals perpetuals. All are CNY-quoted, USDC-settled quanto contracts.
-
-| Market | Underlying | Quote |
-| --- | --- | --- |
-| **SHAG** | Shanghai gold, Au 99.95% | CNY/gram |
-| **SHAU** | Shanghai silver, Ag 99.99% | CNY/kg |
-| **SHCU** | Shanghai copper, Cu-CATH-1 | CNY/tonne |
+Scape lists perpetual futures on regional commodity markets. All are quoted in the
+underlying market's local currency and settled in USDC as quanto contracts — there is no FX
+conversion at any point.
 
 ## Contract Specifications
 
-| Parameter | SHAG (Gold) | SHAU (Silver) | SHCU (Copper) |
-| --- | --- | --- | --- |
-| Underlying | Au 99.95% | Ag 99.99% | Cu-CATH-1 |
-| Quote | CNY/gram | CNY/kg | CNY/tonne |
-| Settlement | USDC | USDC | USDC |
-| Multiplier *M* | 0.1 USDC/CNY | 0.005 USDC/CNY | 0.0005 USDC/CNY |
-| Tick | 0.01 CNY | 0.5 CNY | 5 CNY |
-| Tick value | $0.001 | $0.0025 | $0.0025 |
-| Notional / contract | ~$100 | ~$93 | ~$91 |
-| Max leverage | 20x | 10x | 20x |
-| OI cap | $100M | $50M | $100M |
-| Funding cadence | Hourly | Hourly | Hourly |
-| Margin mode | Isolated only | Isolated only | Isolated only |
+Every Scape market defines the same set of parameters:
 
-<Note>
-  Notional per contract is calculated at reference oracle levels: SHAG 1,000 CNY/g, SHAU
-  18,500 CNY/kg, SHCU 181,000 CNY/t. It scales linearly with the oracle price.
-</Note>
+| Parameter | Description |
+| --- | --- |
+| Underlying | The regional spot assessment the index tracks |
+| Quote | Local-currency unit of the underlying market |
+| Settlement | USDC |
+| Multiplier *M* | Converts local-currency price moves into USDC P&L |
+| Tick | Minimum price increment |
+| Notional / contract | Sized for accessibility, scales with the oracle price |
+| Max leverage | Set per market based on liquidity and volatility |
+| OI cap | Per-market open-interest limit |
+| Funding cadence | Hourly |
+| Margin mode | Isolated only |
+
+Risk is isolated per market — each market carries its own leverage limits and open-interest
+cap, so no single market can contaminate the wider book.
 
 ## External Coverage
 
-External prices are derived from [Shanghai Metals Market](https://www.metal.com) (SMM) CNY
-composite spot feeds on a 500ms cadence, validated and pushed to Hyperliquid via
-[SEDA Protocol](https://seda.xyz) every ~3 seconds. No FX conversion is applied.
+External prices are derived from composite spot assessments published by Scape's reporter
+network, validated and relayed on-chain on a regular cadence. No FX conversion is applied.
 
-SMM publishes during Shanghai sessions. Coverage is dark during:
+Regional assessments publish during local market sessions. Coverage is dark during:
 
-- Weekends (UTC).
-- Published Chinese national holidays (up to 10 days).
-- The 07:00–13:00 UTC mid-day gap.
-- The 18:30–01:00 UTC overnight gap (between the SHFE day and night sessions).
+- Weekends.
+- Regional public holidays.
+- Gaps between local trading sessions.
 
-During dark windows, the oracle holds the last SMM print and the perp continues to trade. See
-[Oracle Price](/market-mechanics/oracle-price) for the internal pricing mechanism.
-
-### Published Holidays
-
-SMM is dark across mainland Chinese public holidays. The recognized 2026 holidays are below.
-The longest closures — Spring Festival and National Day — can leave the oracle held for up to
-10 days.
-
-| Holiday | 2026 Dates |
-| --- | --- |
-| New Year's Day | Jan 1 |
-| Spring Festival (Chinese New Year) | Feb 16 – Feb 22 |
-| Qingming (Tomb-Sweeping Day) | Apr 4 – Apr 6 |
-| Labour Day | May 1 – May 5 |
-| Dragon Boat Festival | Jun 19 – Jun 21 |
-| Mid-Autumn Festival | Sep 25 – Sep 27 |
-| National Day (Golden Week) | Oct 1 – Oct 7 |
+During dark windows, the oracle holds the last published print and the perp continues to
+trade. See [Oracle Price](/market-mechanics/oracle-price) for the internal pricing
+mechanism.
 
 <Note>
-  Exact closure windows — including any adjusted makeup working days — follow the official
-  [SHFE](https://www.shfe.com.cn) holiday schedule and should be confirmed against it each year.
+  Holiday calendars follow the official schedule of each underlying regional market and can
+  hold the oracle for multiple consecutive days during extended closures.
 </Note>
 
 ## Quanto Payoff
 
-P&L per contract is the multiplier times the change in the CNY oracle price, paid in USDC:
+P&L per contract is the multiplier times the change in the local-currency oracle price, paid
+in USDC:
 
 $$
-\text{PnL per contract} = M \times \Delta P_{\text{CNY}}
+\text{PnL per contract} = M \times \Delta P_{\text{local}}
 $$
 
-**Example.** SHAG oracle moves from 1,000 to 1,010 CNY/g. P&L per long contract is
-`0.1 × 10 = $1.00`.
+**Example.** A market with multiplier `0.1` sees its oracle move up 10 units in local
+currency. P&L per long contract is `0.1 × 10 = $1.00`.

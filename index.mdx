@@ -12,11 +12,9 @@ physical delivery — benchmarks, refineries, mines, smelters — and turns them
 indices and 24/7 tradable markets.
 
 Scape operates as a HIP-3 deployer on [Hyperliquid](https://hyperliquid.xyz), running
-perpetual markets on Chinese metals — gold, silver, and copper. The oracle is CNY-quoted and
-derived from [Shanghai Metals Market](https://www.metal.com) (SMM) composite feeds. Margin
-and settlement are in USDC. There is no CNY/USD conversion at any point — exposure is quanto.
+perpetual markets on its own indices. Margin and settlement are in USDC.
 
-See [Commodities](/assets/commodities) for the full contract specifications.
+See [Commodities](/assets/commodities) for how Scape contracts are structured.
 
 ## Three Layers
 
@@ -25,10 +23,9 @@ to 24/7 tradable markets.
 
 <Steps>
   <Step title="Capture — the data layer" icon="database">
-    Price capture from any entity that takes physical delivery and reports price. The SMM
-    partnership anchors mainland China coverage across metals, rare earths, and battery
-    materials. Reported prices are aggregated by material and region into continuous,
-    manipulation-resistant indices.
+    Price capture from any entity that takes physical delivery and reports price. Anchor
+    data partnerships seed coverage in each region, and reported prices are aggregated by
+    material and region into continuous, manipulation-resistant indices.
   </Step>
   <Step title="Forge — synthetic markets" icon="flame">
     Perpetual futures forged on Scape indices — 24/7, globally accessible, no physical
@@ -51,8 +48,8 @@ market parameters, and market-maker economics.
 
 | Layer | Operator | Function |
 | --- | --- | --- |
-| Assessment | SMM | CNY composite spot, 500ms cadence |
-| Relay + Oracle | Scape x SEDA Protocol | Validated push to Hyperliquid every 3s|
+| Assessment | Reporter network | Regional composite spot prices |
+| Relay + Oracle | Scape | Validated push to Hyperliquid every 3s |
 | Execution | Hyperliquid (HyperCore) | Mark, funding, liquidation, USDC settlement |
 
 ## HIP-3
@@ -79,14 +76,12 @@ reached through any compatible interface or directly on-chain.
 Scape is the on-chain venue for the industrial economy — global market reporting and
 execution for the materials of tomorrow.
 
-The cornerstones of the economy are shifting east and south. Roughly 90% of rare earth
-refining capacity sits in mainland China, over half of global nickel supply comes from
-Indonesia, and around 70% of mined cobalt comes from the DRC. These are the materials that
-decide the energy transition — and the venues that price them haven't kept up with their
-importance. Scape gives them the global, always-on price discovery they deserve:
+The cornerstones of the economy are shifting. The materials that decide the energy
+transition are produced and refined far from the venues that price them, and price discovery
+hasn't kept up with their importance. Scape gives these markets the global, always-on price
+discovery they deserve:
 
-- **Markets that never close** — 24/7 trading on materials that never had a tape, starting
-  with Shanghai gold, silver, and copper.
+- **Markets that never close** — 24/7 trading on materials that never had a tape.
 - **One oracle network** — entities taking physical delivery report price on-chain,
   auditable and composable by any protocol.
 - **Permissionless global access** — no onshore entity, licensing, or physical delivery

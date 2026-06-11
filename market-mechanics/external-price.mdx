@@ -5,12 +5,13 @@ description: External price feeds and their role.
 ---
 
 The **external price** is a separate value included alongside the oracle and mark prices in
-relayer updates. It is the last externally derived SMM print.
+relayer updates. It is the last externally derived assessment print from Scape's reporter
+network.
 
-- **When Chinese metals markets are open**, the external price equals the
+- **When the underlying market is open**, the external price equals the
   [oracle price](/market-mechanics/oracle-price).
-- **When they are closed**, the external price stays fixed at the last SMM print while the
+- **When it is closed**, the external price stays fixed at the last external print while the
   oracle advances via its internal pricing mechanism.
 
 The external price is the anchor that internal pricing references during closures. On reopen,
-the external price updates to the live SMM print and the oracle reverts to it.
+the external price updates to the live assessment print and the oracle reverts to it.
