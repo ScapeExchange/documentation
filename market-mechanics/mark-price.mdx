@@ -5,20 +5,27 @@ description: How mark prices are computed and applied.
 ---
 
 The mark price is used for margining, liquidations, stop/limit triggers, and unrealized P&L.
-On Scape it is the Hyperliquid standard: the **median** of three components.
+
+Scape's pushed mark input is the **median** of three components:
 
 1. The oracle price.
-2. The oracle price plus a continuous-time EMA of the perp mid minus the oracle.
-3. The median of the best bid, best ask, and last trade.
+2. The oracle price plus **basis** — a 150-second EWMA of the order-book impact mid relative
+   to the oracle.
+3. The venue mark derived from the order book.
 
-The relayer publishes components (1) and (2). HyperCore computes (3) and takes the median of
-the three as the mark price.
+The relayer pushes this input on-chain. HyperCore determines the final mark under current
+protocol rules using the pushed inputs and its own book-derived mark, including movement
+clamps and stale-input fallbacks.
 
 <Note>
-  The mark price formula is fixed by Hyperliquid and is **not deployer-configurable**. Scape
-  sets the oracle that feeds it, not the mark methodology.
+  The final mark determination is fixed by Hyperliquid and is **not deployer-configurable**.
+  Scape sets the oracle and pushed inputs that feed it, not the mark methodology.
 </Note>
 
-Relayer updates are clamped to ±50 bps of the current value to mitigate large price jumps.
-This applies to both the mark price and the [oracle price](/market-mechanics/oracle-price). A
-separate oracle clamp limits each oracle update to 1% with a hard ceiling of 10× start-of-day.
+## Off-Hours Behavior
+
+During off-hours, the discovery band caps the published
+[oracle price](/market-mechanics/oracle-price) — and with it the funding reference. The basis
+term allows the pushed mark to follow the local order book beyond the oracle band, with
+smoothing. Margining and liquidations remain live against the protocol-determined mark
+throughout.

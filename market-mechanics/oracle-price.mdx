@@ -11,7 +11,18 @@ The oracle serves two functions:
 
 Scape extends a commodity oracle to operate 24/7, beyond the trading sessions of the
 underlying regional market. When the underlying market is open, the oracle follows the
-external assessment print. When it is closed, an internal mechanism takes over.
+external assessment print. When it is closed, a bounded discovery mechanism takes over. The
+regime in force is identified on every update, so an externally derived value always remains
+distinguishable from a Scape-calculated off-hours value.
+
+## Reference-Price Regimes
+
+| Regime | Trigger | Oracle treatment |
+| --- | --- | --- |
+| Active passthrough | Assessment window open and the external value is fresh (age ≤ 5 s) | Oracle derived directly from the latest valid external print |
+| Stale hold | Window open, but the external value is stale | Previous oracle held for up to a 60-second stale budget |
+| Bounded discovery | Window closed, or staleness exceeds 60 s | Scape calculates a separately identified off-hours reference |
+| Holiday hold | Public holiday in the underlying market | Oracle held flat at the last active-session value |
 
 ## External Pricing
 
@@ -20,25 +31,58 @@ The oracle is derived from composite spot assessments published by Scape's repor
 seconds. No FX conversion is applied — the oracle is quoted in the underlying market's local
 currency end to end.
 
-While the assessment is publishing, the externally derived local-currency price is
-transmitted as the oracle price.
+While the assessment is publishing and fresh, the externally derived local-currency price is
+transmitted as the oracle price. A fresh external value is never replaced with local
+discovery merely because it is unchanged or because the local book indicates a different
+price.
 
-## Internal Pricing
+## Off-Hours Pricing
 
 Regional markets close overnight, on weekends, and on public holidays — sometimes for
-multiple consecutive days. During closure:
+multiple consecutive days. During closure the perp keeps trading, and the oracle follows a
+deterministic discovery sequence:
 
-- The oracle **holds the last external print** as its anchor.
-- A continuous-time EMA (CT-EMA) on the perp mid bounds drift from that held anchor.
+1. **Anchor** at the last valid active-session oracle.
+2. **Observe** the Scape order-book impact mid as the local target — it is never relabeled
+   as an external assessment.
+3. **Smooth** movement with a continuous-time EMA over a 6-hour lookback.
+4. **Clamp** each update to a maximum move of 50 bps.
+5. **Bound** cumulative movement within a 400 bps band around the current reference.
+6. **Re-anchor** at 90% of band distance — the reference re-anchors to the edge and a new
+   band forms.
+7. **Cap** after two re-anchors per direction — the final band edge becomes a hard cap until
+   active pricing resumes.
 
-The Hyperliquid order book drives discovery during the closure. On reopen, the external
-assessment resumes and any dislocation between the perp and the fresh print pays through
+The Hyperliquid order book drives discovery during the closure. On the first fresh external
+print, the oracle returns immediately to active passthrough, and any dislocation between the
+perp and the fresh print converges through normal trading and
 [funding](/market-mechanics/funding).
 
-## Safety
+On public holidays the oracle does not run discovery: it holds flat at the last
+active-session value with a 0 bps band.
 
-| Control | Value |
+## Current Parameters
+
+| Parameter | Value |
 | --- | --- |
-| Oracle clamp | 1% max move per update |
-| Hard ceiling | 10× start-of-day |
-| Deployer stake | 500,000 HYPE, slashable on misconduct via stake-weighted validator vote |
+| Freshness threshold | 5 seconds |
+| Stale-hold budget | 60 seconds |
+| EMA lookback | 6 hours |
+| Per-update clamp | 50 bps |
+| Cumulative band | 400 bps |
+| Re-anchor trigger | 90% of band distance |
+| Re-anchor budget | 2 per direction |
+| Holiday band | 0 bps |
+| Maximum off-hours excursion | ≈ +12.5% / −11.5% |
+
+Parameters are deployer-controlled and may be assigned separately per market. The active
+anchor, clamp, band, and consumed re-anchors are observable in operational feed metadata
+during discovery.
+
+## Governance
+
+- Oracle updates are signed by dedicated sub-deployer keys authorized only for oracle pushes;
+  the deployer master key is not used for routine updates. Two sub-deployer keys are
+  authorized to support rotation and failover.
+- The deployer stake is 500,000 HYPE, slashable on misconduct via stake-weighted validator
+  vote.

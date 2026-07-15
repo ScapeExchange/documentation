@@ -16,23 +16,14 @@ margin balance every hour.
 | Parameter | Value |
 | --- | --- |
 | Interval | Hourly |
-| Cadence | Hyperliquid standard |
-| Cap | ±4% / hour |
-| Impact notional | 1,000 |
+| Mechanics | Hyperliquid standard perpetual funding |
+| Interest component | 0.001% per 8 hours (0.00001) |
+| Rate scaling | None — the standard rate applies unscaled |
 
-The funding rate follows the Hyperliquid formula:
-
-$$
-F = 0.5\,\big[\,P + \text{clamp}(r - P,\, -0.0005,\, 0.0005)\,\big]
-$$
-
-where:
-
-- $P$ = average premium index = `impact_price_difference / oracle_price`
-- $r$ = interest rate
-- `impact_price_difference = max(impact_bid − oracle, 0) − max(oracle − impact_ask, 0)`
-
-The funding payment is:
+The funding rate combines the average premium of the perp relative to the oracle with a
+clamped interest component, under standard Hyperliquid perpetual mechanics — see
+[Hyperliquid's documentation](https://hyperliquid.gitbook.io/hyperliquid-docs) for the full
+formula. Funding accrues on position notional and is exchanged between longs and shorts:
 
 $$
 \text{payment} = \text{position size} \times \text{oracle price} \times F
@@ -40,8 +31,9 @@ $$
 
 ## Off-Hours Funding
 
-When the external assessment is dark, the oracle holds the last print while the perp
-continues to trade. Funding
-does the work of closing the gap: as the perp mark drifts from the held anchor, the premium
-widens and funding flows from the rich side to the cheap side. On reopen, any remaining
-dislocation pays through funding rather than through liquidations.
+Funding continues hourly in every oracle regime — active, stale hold, bounded discovery, and
+holiday hold. When the external assessment is dark, the premium term is the economic tether
+between the order book and the published oracle: as the perp mark drifts from the discovery
+reference, the premium widens and funding flows from the rich side to the cheap side. The
+discovery band caps the published oracle, and therefore the funding reference. On reopen, any
+remaining dislocation converges through normal trading and funding.

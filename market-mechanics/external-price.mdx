@@ -8,10 +8,13 @@ The **external price** is a separate value included alongside the oracle and mar
 relayer updates. It is the last externally derived assessment print from Scape's reporter
 network.
 
-- **When the underlying market is open**, the external price equals the
-  [oracle price](/market-mechanics/oracle-price).
-- **When it is closed**, the external price stays fixed at the last external print while the
-  oracle advances via its internal pricing mechanism.
+- **When the underlying market is open** and the print is fresh, the external price equals
+  the [oracle price](/market-mechanics/oracle-price).
+- **When the print goes stale or the market closes**, the external price stays fixed at the
+  last external print while the oracle first holds, then advances under bounded discovery.
+- **On public holidays**, both the external price and the oracle hold flat at the last
+  active-session value.
 
-The external price is the anchor that internal pricing references during closures. On reopen,
-the external price updates to the live assessment print and the oracle reverts to it.
+The external price is the anchor that bounded discovery references during closures. On
+reopen, the external price updates to the live assessment print and the oracle returns
+immediately to it.

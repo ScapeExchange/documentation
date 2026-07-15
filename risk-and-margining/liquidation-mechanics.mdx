@@ -35,5 +35,8 @@ where `l = 1 / maintenance_leverage` and `side` is +1 for longs, −1 for shorts
 
 ## Off-Hours
 
-Dislocations that build up while the external assessment is dark are resolved through
-[funding](/market-mechanics/funding) on reopen rather than through forced liquidations.
+Margining and liquidations remain live around the clock against the protocol-determined mark,
+including while the external assessment is dark. The discovery band caps the published oracle
+and the funding reference, while the mark can follow the order book through the basis term.
+On reopen, remaining dislocation converges through normal trading and
+[funding](/market-mechanics/funding).

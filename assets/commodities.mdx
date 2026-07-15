@@ -17,11 +17,13 @@ Every Scape market defines the same set of parameters:
 | Underlying | The regional spot assessment the index tracks |
 | Quote | Local-currency unit of the underlying market |
 | Settlement | USDC |
-| Multiplier *M* | Converts local-currency price moves into USDC P&L |
+| P&L | Quantity × change in the local-currency price, paid one-for-one in USDC |
+| Position notional | \|quantity\| × contract price, expressed in USDC |
 | Tick | Minimum price increment |
-| Notional / contract | Sized for accessibility, scales with the oracle price |
-| Max leverage | Set per market based on liquidity and volatility |
-| OI cap | Per-market open-interest limit |
+| Quantity precision | Set per market; fractional quantities supported |
+| Minimum order value | $10, venue-wide |
+| Max leverage | Set per market; steps down at higher position notionals |
+| OI cap | Per-market open-interest limit, plus an aggregate cap across all Scape markets |
 | Funding cadence | Hourly |
 | Margin mode | Isolated only |
 
@@ -39,9 +41,9 @@ Regional assessments publish during local market sessions. Coverage is dark duri
 - Regional public holidays.
 - Gaps between local trading sessions.
 
-During dark windows, the oracle holds the last published print and the perp continues to
-trade. See [Oracle Price](/market-mechanics/oracle-price) for the internal pricing
-mechanism.
+During dark windows the perp continues to trade. The oracle advances under a bounded
+discovery mechanism anchored to the last published print, and holds flat on public holidays.
+See [Oracle Price](/market-mechanics/oracle-price) for the off-hours methodology.
 
 <Note>
   Holiday calendars follow the official schedule of each underlying regional market and can
@@ -50,12 +52,12 @@ mechanism.
 
 ## Quanto Payoff
 
-P&L per contract is the multiplier times the change in the local-currency oracle price, paid
-in USDC:
+There is no contract multiplier. P&L is the position quantity times the change in the
+local-currency price, paid one-for-one in USDC:
 
 $$
-\text{PnL per contract} = M \times \Delta P_{\text{local}}
+\text{PnL (USDC)} = \text{quantity} \times (\text{exit price} - \text{entry price})
 $$
 
-**Example.** A market with multiplier `0.1` sees its oracle move up 10 units in local
-currency. P&L per long contract is `0.1 × 10 = $1.00`.
+**Example.** Long 1.0 contract; the price rises 50 units in local currency. P&L is +50 USDC.
+Quantities can be fractional, so a 0.001-contract position gains 0.05 USDC on the same move.

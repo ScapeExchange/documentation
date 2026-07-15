@@ -10,8 +10,10 @@ another.
 
 ## Initial Margin and Leverage
 
-Leverage can be set to any integer from 1 up to the market maximum. Per-market maximums are
-listed under [Commodities](/assets/commodities). The margin required to open a position is:
+Leverage can be set to any integer from 1 up to the market maximum. Maximum leverage is
+tiered: each market defines position-notional tiers, and the maximum steps down as notional
+grows. Per-market maximums are listed under [Commodities](/assets/commodities). The margin
+required to open a position is:
 
 $$
 \text{initial margin} = \frac{\text{position size} \times \text{mark price}}{\text{leverage}}
@@ -25,8 +27,16 @@ unrealized P&L counts as additional margin.
 
 The maintenance margin is the minimum collateral needed to avoid
 [liquidation](/risk-and-margining/liquidation-mechanics). When account equity (collateral plus
-P&L) falls below it, the position is liquidated. Maintenance margin is half the initial margin
-at the market's maximum leverage.
+P&L) falls below it, the position is liquidated.
+
+At each notional tier, the maintenance margin rate is half the initial margin rate at that
+tier's maximum leverage. Maintenance margin is computed as
+
+$$
+\text{maintenance margin} = \text{MMR} \times \text{notional} - \text{deduction}
+$$
+
+with per-tier deductions chosen so the schedule is continuous across tier boundaries.
 
 ## Position Limits
 

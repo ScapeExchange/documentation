@@ -26,15 +26,17 @@ Hyperliquid every ~3 seconds, with no FX conversion.
 
 ## Quanto Payoff
 
-Each market has a fixed multiplier *M*. P&L per contract is that multiplier times the change in
-the local-currency oracle price, paid in USDC:
+There is no contract multiplier. P&L is the position quantity times the change in the
+local-currency oracle price, paid one-for-one in USDC:
 
 $$
-\text{PnL per contract} = M \times \Delta P_{\text{local}}
+\text{PnL (USDC)} = \text{quantity} \times \Delta P_{\text{local}}
 $$
 
-No FX conversion is applied — a trader takes a view on the local-currency price and is paid in
-dollars on the move.
+One unit of local-currency price movement pays one USDC per contract. No FX conversion is
+applied — a trader takes a view on the local-currency price and is paid in dollars on the
+move. Position notional is $|\text{quantity}| \times \text{contract price}$, expressed in
+USDC.
 
-Per-market multipliers, ticks, leverage, and other contract specifications are listed under
-[Commodities](/assets/commodities).
+Per-market ticks, quantity precision, leverage, and other contract specifications are listed
+under [Commodities](/assets/commodities).
