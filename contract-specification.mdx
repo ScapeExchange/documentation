@@ -1,0 +1,131 @@
+---
+title: "SHCU contract specification"
+sidebarTitle: "Contract specification"
+description: "io:SHCU is a USDC-settled quanto perpetual on the China Copper Spot Index. It is quoted in CNY per tonne and has no expiry and no delivery."
+---
+
+## Contract
+
+| Term | Value |
+| --- | --- |
+| Ticker | `io:SHCU` |
+| Venue | Hyperliquid mainnet, HIP-3, Entropy `io` dex |
+| Contract type | Quanto perpetual, linear, cash-settled |
+| Benchmark | China Copper Spot Index (SGPI-CA-INDEX), Price Index SG |
+| Quotation | CNY per tonne |
+| Contract size | 1 tonne |
+| Multiplier | 1 USDC per 1 CNY/t per contract |
+| FX conversion | None |
+| Collateral and settlement | USDC |
+| Margin mode | Isolated |
+| Maximum leverage | 10× |
+| Trading hours | 24/7. Index sessions and holiday closures are in [Trading calendar](/trading-calendar) |
+| Tick size | 1 CNY/t |
+| Size decimals | 5 |
+| Minimum size increment | 0.00001 contract |
+| Minimum order value | 10 USDC |
+| Funding interval | 1 hour |
+| Funding multiplier | 0.5 |
+| Interest rate | 0.01% per 8 hours |
+| Funding premium clamp | 0.03% per 8 hours |
+| Oracle update | About every 3 seconds |
+| Open interest cap | $100,000,000 |
+| Growth Mode | On |
+
+## Margin tiers
+
+| Position notional from | Max leverage | Initial margin | Maintenance margin | Maintenance deduction |
+| --- | --- | --- | --- | --- |
+| $0 | 10× | 10.0% | 5.0% | $0 |
+| $5,000,000 | 5× | 20.0% | 10.0% | $250,000 |
+| $20,000,000 | 3× | 33.3% | 16.7% | $1,583,333 |
+
+See [Margin and liquidation](/margin-and-liquidation).
+
+## Oracle and mark
+
+| Term | Value |
+| --- | --- |
+| Index sessions (UTC+8) | 09:00–10:15, 10:30–11:30, 13:30–15:00, 21:00–01:00 |
+| Active-session oracle | Index print, unmodified |
+| Freshness threshold | 5 seconds |
+| Stale hold | 60 seconds |
+| Off-hours target | SHCU book impact mid |
+| Off-hours time constant | 30 minutes |
+| Per-update clamp | 50 bps |
+| Discovery band | ±1,000 bps around the last index value |
+| Re-anchor | At 90% of the band, once per direction per closure |
+| Holiday band | ±1,000 bps, no re-anchor |
+| Roll | None. The index is continuous |
+| Mark price | Median of the oracle, the oracle plus a 150-second EWMA of (perp mid − oracle), and the local book mark |
+| External reference price | Last index print |
+
+See [Oracle](/oracle) and [Mark price](/mark-price).
+
+## Reading the quote
+
+<Info>
+  The price on screen is the Shanghai price. `110,383` means 110,383 CNY per tonne. It is not a USD price and it is not rescaled.
+</Info>
+
+One contract references one tonne. Position value and PnL are computed on the CNY number and paid in USDC, one for one:
+
+```text
+Notional (USDC) = |size| × price
+PnL (USDC)      = size × (exit price − entry price)
+```
+
+| Example | Result |
+| --- | --- |
+| Long 5 contracts at 110,000 | Notional 550,000 USDC. Initial margin at 10×: 55,000 USDC |
+| Price rises to 111,500 | PnL = 5 × 1,500 = +7,500 USDC, a 1.36% return on notional |
+| Minimum increment, 0.00001 contract at 110,383 | 1.10 USDC of notional |
+| One tick, 1 CNY/t, on one contract | 1 USDC |
+
+## What "quanto" means here
+
+The index is a CNY price. The contract pays in USDC. No exchange rate connects the two: the CNY price move is paid as the same number of USDC. Three consequences matter.
+
+**Percentage returns are Shanghai copper's CNY returns.** A 1% move in the index is a 1% gain or loss on USDC notional. USD/CNY does not enter the PnL.
+
+**A contract carries more copper delta than one tonne.** One contract gains 1 USDC when Shanghai copper rises 1 CNY/t. A physical tonne gains 1 CNY, which is 1/S dollars at a USD/CNY rate of S. One contract therefore has the dollar delta of S tonnes: about 7 tonnes at USD/CNY 7.00. Its USDC notional equals the dollar value of that quantity of copper.
+
+**The hedge ratio is a division by the exchange rate.** To hedge T tonnes of CNY-priced copper:
+
+```text
+contracts = T ÷ S        where S is USD/CNY
+```
+
+| Exposure | USD/CNY | Contracts | Notional at 110,000 |
+| --- | --- | --- | --- |
+| 140 tonnes | 7.00 | 20 | 2,200,000 USDC |
+| 1,000 tonnes | 7.00 | 142.86 | 15,714,286 USDC |
+
+If the index falls 2,000 CNY/t, 140 tonnes of inventory loses 280,000 CNY, which is 40,000 dollars at 7.00. A short of 20 contracts gains 20 × 2,000 = 40,000 USDC.
+
+The ratio drifts as USD/CNY moves, so a hedge sized today is re-sized as the rate changes. Hedging SHCU itself against SHFE, LME or COMEX is covered in [Index behavior and hedging](/index-behavior-and-hedging).
+
+## Order and price conventions
+
+| Convention | Rule |
+| --- | --- |
+| Price | Integer CNY per tonne at current levels. Hyperliquid accepts up to 5 significant figures, and integer prices are always valid |
+| Size | Contracts (tonnes), to 5 decimal places |
+| Order types | All Hyperliquid order types: limit, market, stop, take-profit, TWAP, scale, with post-only, IOC and GTC time-in-force |
+| Notional for caps, margin tiers and depth measures | \|size\| × price, in USDC |
+
+## Funding
+
+Funding is exchanged between longs and shorts every hour and is computed on oracle-valued notional. The premium is the distance of the book's impact mid from the oracle. While it averages between 2 bps below and 4 bps above the oracle, the rate is 0.005% per 8 hours, paid by longs, which is about 5.5% a year. See [Funding](/funding).
+
+## Fees
+
+At the base Hyperliquid tier the all-in fee is 0.9 bp for takers and 0.3 bp for makers. See [Fees](/fees).
+
+## Open interest
+
+The cap is $100,000,000 of notional, about 906 contracts at 110,383. It rises in five stages to $1,000,000,000 as published gates are met. See [Open interest caps](/open-interest-caps).
+
+## Specification changes
+
+Changes to this specification follow [Operations and change control](/operations-and-change-control). The parameters in force are always readable from Hyperliquid's API.

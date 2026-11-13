@@ -1,0 +1,60 @@
+---
+title: "Open interest caps"
+description: "SHCU's open interest is capped, and the cap rises only when the market has shown it can carry more. The schedule and the gates are published in advance so that position limits are predictable."
+---
+
+## Schedule
+
+| Stage | Open interest cap | Requires |
+| --- | --- | --- |
+| Launch | $100M | Mainnet launch |
+| 1 | $200M | All gates held for 30 days at the launch cap |
+| 2 | $300M | All gates held for 30 days at Stage 1, and 3 anchor market makers |
+| 3 | $500M | All gates held for 60 days at Stage 2, including one holiday closure |
+| 4 | $750M | All gates held for 60 days at Stage 3 |
+| 5 | $1B | All gates held for 90 days at Stage 4, including one holiday closure |
+
+The fastest possible path from launch to the $1B cap is 270 days.
+
+Open interest is measured as notional: the sum of |size| × mark price, in USDC. At an index level of 110,383 the launch cap is about 906 contracts.
+
+## Expansion gates
+
+Every gate must hold for the full period before a stage is unlocked.
+
+| Gate | Threshold |
+| --- | --- |
+| Demand | Open interest at 70% or more of the cap on 10 of the last 30 days |
+| Depth | Bids plus asks within 50 bps of mid equal to 1% of the cap in session and 0.5% off-hours, as a 30-day median |
+| Market makers | 2 anchor market makers, each quoting $250k per side within 50 bps of mid at 95% quote uptime. 3 from Stage 2 |
+| Liquidations | No auto-deleveraging and no losses beyond maintenance margin |
+| Oracle | Fresh index feed for 99.9% of session time, and every reopen inside its band |
+
+### What the depth gate requires at each stage
+
+| Cap | In-session depth within 50 bps | Off-hours depth within 50 bps |
+| --- | --- | --- |
+| $100M | $1.0M | $0.5M |
+| $200M | $2.0M | $1.0M |
+| $300M | $3.0M | $1.5M |
+| $500M | $5.0M | $2.5M |
+| $750M | $7.5M | $3.75M |
+| $1B | $10.0M | $5.0M |
+
+## Why the cap is gated
+
+**Depth scales with risk.** Liquidations are executed on the order book. Tying the cap to resting depth keeps the size that may need to be liquidated in proportion to what the book can absorb.
+
+**Demand comes first.** The cap rises when the existing cap is being used. Capacity is not added ahead of positions.
+
+**Holidays are tested before the largest stages.** A week-long Shanghai closure is the longest period of off-hours discovery. Stages 3 and 5 require the market to have passed through one at the prior cap.
+
+**The oracle has to have behaved.** A stage is not unlocked if the feed was not fresh for 99.9% of session time or if any reopen landed outside its band.
+
+## When the cap binds
+
+When open interest reaches the cap, HyperCore rejects orders that would increase open interest. Orders that reduce or close positions are unaffected. The cap in force is readable from Hyperliquid's API.
+
+## Changes
+
+Stage increases are announced before they take effect. The deployer can lower a cap or set the market to reduce-only at any time as a risk action. See [Operations and change control](/operations-and-change-control).

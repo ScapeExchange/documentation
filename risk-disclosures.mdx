@@ -1,0 +1,88 @@
+---
+title: "Risk disclosures"
+description: "SHCU is a leveraged derivative on a commodity benchmark, traded on a public blockchain protocol. This page sets out the risks that are specific to it. Read it with the pages it links to."
+---
+
+## Market and product risks
+
+**Leverage and liquidation.** Positions can be opened with up to 10× leverage. At 10×, a long is liquidated after a 5.26% adverse move in the mark price and a short after 4.76%. Liquidation can occur at any hour, including when the Shanghai market is closed. See [Margin and liquidation](/margin-and-liquidation).
+
+**Quanto exposure.** SHCU pays 1 USDC for each 1 CNY/t move per contract. Its returns are the CNY returns of Shanghai copper applied to USDC notional. They are not the USD returns of holding copper, and they do not include the USD/CNY exchange rate. A hedge of CNY-priced copper is sized by dividing by USD/CNY and drifts as that rate moves. See [SHCU contract specification](/contract-specification).
+
+**Off-hours pricing.** The Shanghai market is open 38.75 hours in a normal week. Outside those hours the oracle is discovered from SHCU's own order book within a ±1,000 bps band of the last index value, with one re-anchor per direction. It can travel up to +21% or −19% in one ordinary closure. Off-hours prices reflect what SHCU participants are willing to trade at. They are not Shanghai prices and can differ from where Shanghai reopens.
+
+**The band does not limit the mark.** The discovery band limits the oracle. The mark price, which margin and liquidation use, follows the SHCU book at up to 1% per update and can trade outside the oracle's band.
+
+**Reopen gaps.** At a session open the oracle steps to the first fresh index print, and the mark follows at up to 1% per update. A position can gain or lose the full reopen gap within seconds. The largest gap in the 12-month calibration sample was 330 bps. Larger gaps are possible.
+
+**Holidays.** Chinese national holidays close the Shanghai market for a week or more. The 2027 Spring Festival closure runs 10.75 days from the last index print to the next. For that period the oracle is bounded within ±1,000 bps of the last index value and liquidity can be thinner. See [Trading calendar](/trading-calendar).
+
+**Liquidity.** Displayed depth varies by session and can be withdrawn. Market-maker quoting obligations are relaxed under stress and suspended in severe events. A large order or a liquidation can move the price.
+
+**Auto-deleveraging.** If a liquidated position cannot be closed on the order book at a price that leaves non-negative equity, Hyperliquid's auto-deleveraging can close profitable opposing positions at the mark price.
+
+**Funding.** Funding is paid or received every hour and varies with the premium of the book to the oracle. It can be a material cost over time. The protocol cap is 0.5% per hour.
+
+**Open interest cap.** When the cap is reached, new or larger positions are rejected. A hedge may not be able to be increased when it is needed.
+
+## Reference and oracle risks
+
+**Benchmark dependency.** SHCU depends on the China Copper Spot Index. The administrator can correct, change, suspend or discontinue it. Corrections apply prospectively and settled trades are not reopened. On suspension or discontinuation the market may move to a successor reference or a fallback, be set to reduce-only, or be halted and settled.
+
+**Basis to other copper prices.** The index includes a physical spot premium and has traded between 61 bps below and 65 bps above the SHFE dominant contract. Its relationship to LME and COMEX prices also depends on FX and import arbitrage. A position in SHCU is not a position in SHFE, LME or COMEX copper.
+
+**Oracle operation.** The oracle is computed by a program and submitted to Hyperliquid by the deployer. Feed outages, delayed submissions, software faults or incorrect inputs can produce stale or wrong prices. Protections are described in [Oracle](/oracle) and [Mark price](/mark-price). They reduce these risks and do not remove them.
+
+**Reflexivity.** Off-hours, the oracle follows the SHCU order book. Sustained trading at displaced prices moves the oracle and the mark within their bounds. The impact-price target, the 30-minute time constant, the band and the open interest cap raise the cost of doing so.
+
+## Outcome market risks
+
+**Total loss of premium.** A losing outcome share settles at zero.
+
+**Path dependence.** A Monthly Touch settles Yes on the first touch of its target by the oracle, in any session state, and settles early. A later reversal does not change the result.
+
+**Narrow resolution window.** A Quarterly Close resolves on a five-minute TWAP. Small price differences near the strike decide the outcome, and a resolution price equal to the strike resolves No.
+
+**Deployer settlement.** Outcomes are settled by the deployer under the template rules. HIP-4 has no trader dispute window.
+
+**Settlement fee.** A winning share pays the outcome fee on its payout at settlement. A position held to a winning settlement receives slightly less than 1 USDC a share.
+
+**Orders routed through Skew.** A maker quote held by Skew is firm and has no last look: it can be sent and filled at any time before it expires. While a match completes, the maker's order is on the public book and any account can trade against it. A user's unfilled remainder rests on the public book until its deadline. If Skew is unavailable, a resting order stays live until the account cancels it on Hyperliquid. Skew sets order-size limits and can pause matching.
+
+See [Outcome markets](/outcome-markets).
+
+## Venue, deployer and protocol risks
+
+**Hyperliquid.** Matching, margining, funding, liquidation and settlement are performed by the Hyperliquid protocol. Scape does not control it and does not guarantee its availability, performance or continued operation.
+
+**Deployer powers.** The perpetual's deployer can change leverage, margin tables, open interest caps and fee settings, set the market to reduce-only, and halt trading. A halt cancels all open orders and settles all positions at the current mark price.
+
+**Deployer stake.** The deployer's 500,000 HYPE stake can be slashed by validators. Slashed stake is burned. It does not compensate traders.
+
+**Software and chain risk.** HyperCore, the oracle network and the services that route orders to them are software systems and can fail or be exploited.
+
+**Collateral.** Positions are collateralized and settled in USDC. A loss of the USDC peg or an impairment of USDC on Hyperliquid affects all positions.
+
+**Custody.** Funds remain in the trader's own Hyperliquid account under the trader's own keys. Loss or compromise of those keys is a loss of the funds. Scape cannot recover them.
+
+## Operational and legal risks
+
+**Parameter changes.** Risk parameters can be changed immediately in an emergency. See [Operations and change control](/operations-and-change-control).
+
+**Fees.** Fee settings can change with notice. Hyperliquid's own schedule can change without it.
+
+**Eligibility.** SHCU is not offered in restricted jurisdictions or to restricted persons. Each participant is responsible for determining that it may lawfully access Hyperliquid and trade SHCU.
+
+**Regulation.** The legal and regulatory treatment of onchain derivatives differs by jurisdiction and can change. A change can restrict access to, or require the discontinuation of, a market.
+
+**No advice.** Nothing in this documentation is investment, legal, tax or accounting advice, or an offer or solicitation in any jurisdiction where that would be unlawful.
+
+## Notices
+
+Scape is the trading name of Seneca Research, Inc. Scape designs and originates SHCU. It does not custody assets, match orders, act as a counterparty or operate the Hyperliquid protocol.
+
+Price Index SG is the administrator of the China Copper Spot Index. It does not sponsor, endorse, operate, broker, clear, market, sell, act as counterparty to or guarantee SHCU. Off-hours oracle values are calculated by Scape's oracle program. They are not Price Index SG assessments and are not approved by Price Index SG.
+
+Hyperliquid, SEDA, Entropy and Skew are independent of Scape. Their names are used to describe their roles and do not imply sponsorship or endorsement.
+
+Historical statistics in this documentation describe a past sample. They are not a forecast.

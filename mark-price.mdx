@@ -1,0 +1,83 @@
+---
+title: "Mark price"
+description: "The mark price is used for margin, liquidation, unrealized PnL and trigger orders. For SHCU it is the median of three prices, two derived from the oracle and one taken directly from the order book."
+---
+
+## Definition
+
+```text
+Mark = median( O ,  O + basis ,  local mark )
+```
+
+| Component | Definition | Supplied by |
+| --- | --- | --- |
+| `O` | The oracle price in the current regime | Oracle program |
+| `O + basis` | The oracle plus a 150-second EWMA of (perp mid − oracle) | Oracle program |
+| `local mark` | Median of best bid, best ask and last trade on the SHCU book | HyperCore |
+
+The oracle program submits the first two as mark candidates. HyperCore computes the third from its own book and takes the median. The program never publishes a single composed mark: the final value is always computed by the venue, and the venue's own book price is always one of the three inputs.
+
+## The basis term
+
+```text
+α      = 1 − exp(−Δt ÷ 150 s)
+basis  = basis_prev + α × ( (perp mid − O) − basis_prev )
+```
+
+The basis follows a sustained premium or discount of the perpetual to the oracle and ignores single ticks. It adjusts the mark only. It never changes the oracle, so the active-session oracle remains the unsmoothed index.
+
+If the perpetual mid is unavailable for an update, the previous basis is carried forward. With no prior basis and no mid, the basis is zero and both submitted candidates equal the oracle.
+
+## HyperCore limits
+
+HyperCore applies its own limits to every HIP-3 market, independent of the oracle program.
+
+| Limit | Value |
+| --- | --- |
+| Minimum interval between oracle submissions | 2.5 seconds |
+| Maximum mark move per update | 1% from the previous mark |
+| Price range | All prices within 10× of the start-of-day value |
+| No oracle submission for 10 seconds | Mark falls back to the local mark |
+| Open interest | A mark update cannot lift open interest notional beyond 10× the cap |
+
+## What limits the mark
+
+| Limit | Applies to the mark |
+| --- | --- |
+| 1% per update | Yes. With updates about every 3 seconds, the mark moves at most about 1% every 3 seconds |
+| Median of three | Yes. The mark always lies between the lowest and the highest of the oracle, the oracle plus basis, and the local mark |
+| Off-hours discovery band | No. The band limits the oracle |
+
+<Warning>
+  The band is a limit on the oracle, and through it on funding and on outcome resolution. It is not a limit on the mark. Off-hours, two of the three mark inputs follow the SHCU book, so the mark goes where the book trades and stays. A position is liquidated on the mark, at any hour, whether or not its liquidation price lies inside the oracle's band.
+</Warning>
+
+## Behavior
+
+**A single print does not move the mark.** With the oracle at 110,000, a sustained mid of 110,220, a book of 110,200 bid and 110,240 offered, and a last trade that prints at 111,500:
+
+| Component | Value |
+| --- | --- |
+| `O` | 110,000 |
+| `O + basis` | 110,220 |
+| `local mark` = median(110,200, 110,240, 111,500) | 110,240 |
+| **Mark** = median of the three | **110,220** |
+
+The outlier trade is discarded twice: once inside the local mark and once by the outer median.
+
+**A sustained move in the book does move the mark.** Two of the three components follow the SHCU book, one immediately and one over roughly 150 seconds. If the book reprices and stays repriced, the mark follows it, at no more than 1% per update. This is intended: the mark values positions at a price they can be closed at.
+
+**The oracle component is the slow one off-hours.** In a closed session the oracle follows the book with a 30-minute time constant inside its band. The mark can therefore sit away from the oracle for some time, and that difference is the premium that funding acts on. See [Funding](/funding).
+
+**At reopen the mark steps toward the index.** When the first fresh index print arrives, the oracle and the oracle-plus-basis candidate both move with it. If the book has not yet repriced, the median is one of those two, and the mark moves toward the index at up to 1% per update.
+
+## Where each price is used
+
+| Use | Price |
+| --- | --- |
+| Initial and maintenance margin, liquidation | Mark |
+| Unrealized PnL | Mark |
+| Stop and take-profit triggers | Mark |
+| Funding notional and funding premium | Oracle |
+| Open interest cap | Mark |
+| Outcome market resolution | Oracle |

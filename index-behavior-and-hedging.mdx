@@ -1,0 +1,169 @@
+---
+title: "Index behavior and hedging"
+description: "This page answers the questions a desk asks before quoting or hedging SHCU: how the index moves against SHFE, what an SHFE hedge leaves behind, and how to size a hedge against a quanto contract."
+---
+
+Sample: 1 September 2025 to 18 September 2026, 240 matched trading days. The SHFE reference is the copper contract with the highest open interest on each day.
+
+## Key findings
+
+| Question | Answer |
+| --- | --- |
+| Does the index move with SHFE? | Yes. Return correlation 0.997 daily and 0.998 on 15-minute bars |
+| What is the price beta? | 1.00 |
+| How much risk remains after an SHFE hedge? | About 1.3 bps per 15 minutes, against 19 bps of SHFE movement |
+| Does either price lead? | No. All co-movement is at zero lag |
+| How wide is the basis to SHFE? | Median +4 bps. 90% of days between −23 and +41 bps. Full range −61 to +65 bps |
+| How fast does the basis move? | About 10 bps a day, one standard deviation |
+| How large are reopen gaps? | Largest 330 bps, one third of the oracle's discovery band |
+
+## Tracking
+
+| Measure | Daily | 15-minute | 60-minute |
+| --- | --- | --- | --- |
+| Return correlation | 0.997 | 0.998 | 0.997 |
+| Beta, index on SHFE | — | 1.00 | 1.00 |
+| Tracking error, bps per bar | — | 1.3 | 2.8 |
+| SHFE move, bps per bar | — | 19.1 | 37.1 |
+| Observations | 240 | 3,846 | 1,091 |
+
+On 15-minute bars an SHFE hedge leaves 1.3 bps of a 19.1 bp move, so it removes about 93% of the price movement. What remains is the spot basis.
+
+### Lead and lag
+
+| Lag, in 15-minute bars | −2 | −1 | 0 | +1 | +2 |
+| --- | --- | --- | --- | --- | --- |
+| Return correlation | 0.018 | 0.125 | 0.998 | 0.124 | 0.018 |
+
+Correlation is concentrated at zero lag and is symmetric around it. Neither series leads. An SHFE hedge moves in step with the index.
+
+### A stress day
+
+On 29 January 2026, the most volatile day in the sample, SHFE moved about 8,000 CNY/t. The index followed every move with a steady, small gap.
+
+## Basis to SHFE
+
+The basis is index ÷ SHFE dominant contract − 1. It is the part of the price that an SHFE hedge does not cover, and it reflects the East China spot premium.
+
+| Statistic | Value |
+| --- | --- |
+| Median | +3.7 bps, about +33 CNY/t |
+| Mean | +4.3 bps |
+| 5th to 95th percentile | −23 to +41 bps |
+| Lowest | −61 bps, 25 February 2026 |
+| Highest | +65 bps, 20 August 2026 |
+| Days within ±20 bps | 78% |
+| Days within ±40 bps | 94% |
+| Day-to-day change, 1 standard deviation | 10 bps |
+| Day-to-day change, 95th percentile | 19 bps |
+
+### By month
+
+| Month | Days | Mean (bps) | Low | High |
+| --- | --- | --- | --- | --- |
+| Sep 2025 | 21 | +12.9 | −0.6 | +29.5 |
+| Oct 2025 | 17 | +1.5 | −6.9 | +10.1 |
+| Nov 2025 | 17 | +6.4 | −1.2 | +12.2 |
+| Dec 2025 | 19 | −4.0 | −33.6 | +19.8 |
+| Jan 2026 | 19 | −13.1 | −26.8 | +19.4 |
+| Feb 2026 | 13 | −16.9 | −60.7 | +1.0 |
+| Mar 2026 | 18 | −7.6 | −18.7 | +11.0 |
+| Apr 2026 | 19 | +1.3 | −6.3 | +7.3 |
+| May 2026 | 18 | −2.2 | −13.0 | +8.8 |
+| Jun 2026 | 21 | −2.6 | −9.0 | +2.9 |
+| Jul 2026 | 23 | +24.8 | +3.9 | +51.3 |
+| Aug 2026 | 21 | +22.2 | −13.5 | +64.6 |
+| Sep 2026 | 14 | +24.4 | +6.4 | +57.1 |
+
+The basis ran close to zero from October 2025 to June 2026, with a discount in January and February, and widened to a premium of 20 to 25 bps on average from July 2026. It moves in regimes that last months, which is the physical market showing through.
+
+## Sizing a hedge against a quanto contract
+
+`io:SHCU` pays 1 USDC per contract for each 1 CNY/t move. A CNY-denominated hedge pays 1 CNY per tonne for the same move. The exchange rate therefore sets the ratio. Let `S` be USD/CNY.
+
+### Direct hedge: SHFE copper
+
+```text
+SHFE tonnes per SHCU contract = S
+SHFE lots per SHCU contract   = S ÷ 5
+```
+
+| USD/CNY | SHFE tonnes per contract | SHFE lots per contract |
+| --- | --- | --- |
+| 6.80 | 6.80 | 1.36 |
+| 7.00 | 7.00 | 1.40 |
+| 7.20 | 7.20 | 1.44 |
+
+A short of 10 contracts hedged at USD/CNY 7.00 is long 70 tonnes of SHFE copper, or 14 lots. If the index rises 1,000 CNY/t, the SHCU short loses 10,000 USDC and the SHFE long gains 70,000 CNY, which is 10,000 dollars.
+
+Two things to manage:
+
+- **Ratio drift.** The hedge ratio is `S`, so the SHFE position is re-sized as USD/CNY moves. A 1% move in the rate changes the required hedge by 1%.
+- **Currency of the hedge PnL.** SHCU PnL accrues in USDC and SHFE PnL in CNY. Accumulated CNY PnL is an FX position until it is converted.
+
+The price beta is 1.00 and the residual is the spot basis described above.
+
+### Proxy hedge: LME or COMEX copper
+
+When Shanghai is closed, the available hedges are USD copper and USD/CNH. Write the Shanghai price as
+
+```text
+P = k × L × S
+```
+
+where `L` is the USD copper price per tonne, `S` is USD/CNY and `k` is the Shanghai-to-London price ratio net of FX. At import parity `k` is close to 1.13, the VAT factor, and it moves with import arbitrage and domestic supply and demand.
+
+To first order, a long of one SHCU contract carries:
+
+| Exposure | Size | At P = 110,000, S = 7.00, k = 1.13 |
+| --- | --- | --- |
+| USD copper | k × S tonnes | 7.91 tonnes: 0.32 LME lots, or 0.70 COMEX HG contracts |
+| USD/CNY | P dollars, long USD | 110,000 dollars |
+| Shanghai ratio `k` | Unhedged | The Shanghai-specific premium SHCU exists to trade |
+
+The FX leg is the same size as the position's USDC notional. The copper leg alone leaves the position exposed to the exchange rate, because the same USD copper price maps to a higher CNY price when the yuan weakens.
+
+### Hedge availability across the week
+
+| Window | Shanghai | Regime | Hedge |
+| --- | --- | --- | --- |
+| 01:00–02:15, 02:30–03:30, 05:30–07:00 UTC, Monday to Friday | Day session | Active | SHFE, direct |
+| 13:00–17:00 UTC, Monday to Friday | Night session | Active | SHFE, direct |
+| Other weekday hours with LME or CME copper open | Closed | Hedge open | USD copper and USD/CNH, proxy |
+| CME daily maintenance hour, and the weekend | Closed | Hedge closed | None. Risk is warehoused |
+
+The SHFE night session does not run on the evening before a mainland holiday. Session boundaries follow exchange notices.
+
+## Reopen gaps
+
+The move from the last index print before a closure to the first print after it:
+
+| Closure | Count | Median (bps) | 5th pct | 95th pct | Largest |
+| --- | --- | --- | --- | --- | --- |
+| Morning break | 240 | +0.0 | −11 | +8 | 64 |
+| Lunch | 240 | −1.0 | −29 | +23 | 87 |
+| Evening gap | 222 | +0.7 | −80 | +90 | 330 |
+| Overnight gap | 188 | +1.0 | −36 | +58 | 132 |
+| Weekend | 48 | +7.7 | −88 | +64 | 237 |
+| Holiday | 6 | +35.2 | −152 | +244 | 274 |
+
+The evening gap, from the 15:00 close to the 21:00 night open, has the widest 5th-to-95th percentile range of the ordinary closures. It spans the London morning. How the oracle travels across these gaps is in [Oracle](/oracle).
+
+## Carry
+
+With the premium inside the funding clamp, longs pay shorts 0.005% per 8 hours, about 5.5% a year, on oracle-valued notional. A desk that is short SHCU against long SHFE receives that funding and carries the SHFE roll. See [Funding](/funding).
+
+## Data and method
+
+| Item | Detail |
+| --- | --- |
+| Index data | China Copper Spot Index ticks, 11.4 million after de-duplication |
+| SHFE data | Exchange daily data for every copper contract. 15-minute and 60-minute bars for the dominant contract |
+| Dominant contract | Highest open interest on each trading day (CU2510 to CU2610 over the sample) |
+| Daily alignment | Index last print at or before 15:00 Beijing against the SHFE closing price |
+| Intraday alignment | Index print at or within 60 seconds before each SHFE bar end |
+| Returns | Log returns between consecutive bars in the same session |
+| Basis convention | Close against close. SHFE settlement prices are volume-weighted over the day and are not like-for-like |
+| Feed cadence | 91% of in-session ticks at the 500 ms cadence. Median interval 0.5 seconds. No in-session gap longer than 60 seconds |
+
+These statistics are Scape calculations from licensed index data and public SHFE data. They describe the past and are not a forecast of the basis or of hedge performance.

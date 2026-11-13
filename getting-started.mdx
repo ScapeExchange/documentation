@@ -1,0 +1,93 @@
+---
+title: "Getting started"
+description: "SHCU trades on Hyperliquid. There is nothing to install and no Scape account to open: a Hyperliquid account holding USDC is all a first trade needs."
+---
+
+## Trade the perpetual
+
+<Steps>
+  <Step title="Use a Hyperliquid account holding USDC">
+    There is no Scape account to open.
+  </Step>
+  <Step title="Open io:SHCU">
+    Find it in a Hyperliquid interface that lists builder-deployed markets. It is on the `io` dex.
+  </Step>
+  <Step title="Fund the io dex with USDC">
+    Each builder-deployed dex is margined separately from the main perpetual account.
+  </Step>
+  <Step title="Choose leverage">
+    Up to 10×. Margin is isolated.
+  </Step>
+  <Step title="Place the order">
+    Enter a price in CNY per tonne and a size in contracts of one tonne.
+  </Step>
+</Steps>
+
+## Read the ticket before the first order
+
+| On the ticket | What it means |
+| --- | --- |
+| Price `110,383` | 110,383 CNY per tonne. It is not a dollar price |
+| Size `5` | 5 contracts, referencing 5 tonnes |
+| Order value | 5 × 110,383 = 551,915 USDC. Size × price, read as USDC, with no exchange rate |
+| Margin at 10× | 55,191.50 USDC |
+| One tick | 1 CNY/t, worth 1 USDC per contract |
+| Smallest size | 0.00001 contract, about 1.10 USDC of notional. The minimum order value is 10 USDC |
+
+## Check three things before holding a position
+
+| Check | Why | Where |
+| --- | --- | --- |
+| Session state | When Shanghai is closed, the oracle follows the SHCU book inside a band, and liquidity can be thinner | [Oracle](/oracle), [Trading calendar](/trading-calendar) |
+| Liquidation price | A 10× long is liquidated 5.26% below entry on the mark price, at any hour | [Margin and liquidation](/margin-and-liquidation) |
+| Funding | Paid or received every hour on the position's notional | [Funding](/funding) |
+
+<Warning>
+  A leveraged position can be liquidated at any hour, including while Shanghai is closed. Liquidation uses the mark price, which follows the SHCU book.
+</Warning>
+
+## Trade the outcome markets
+
+<Steps>
+  <Step title="Use a Hyperliquid account holding USDC">
+    The same account as for the perpetual.
+  </Step>
+  <Step title="Open an outcome">
+    Choose an SHCU Monthly Touch or SHCU Quarterly Close outcome in an interface that lists Hyperliquid outcome markets, or in an interface integrated with Skew.
+  </Step>
+  <Step title="Buy Yes or No">
+    The price is between 0 and 1 USDC a share. Size is in whole shares.
+  </Step>
+  <Step title="Hold or close">
+    A winning share settles to 1 USDC and a losing share to 0. A position can be sold on the book at any time before resolution.
+  </Step>
+</Steps>
+
+There is no leverage and no liquidation on an outcome position. The most a buyer can lose is the price paid. See [Outcome markets](/outcome-markets).
+
+## Connect a desk
+
+<Columns cols={2}>
+  <Card title="API integration" icon="code" href="/api-integration">
+    Identifiers, market data and order conventions.
+  </Card>
+  <Card title="Index behavior and hedging" icon="trending-up" href="/index-behavior-and-hedging">
+    Reference behavior against SHFE and hedge sizing.
+  </Card>
+  <Card title="Liquidity program" icon="droplet" href="/liquidity-program">
+    Quoting standards and the anchor program.
+  </Card>
+  <Card title="Outcome liquidity" icon="arrow-left-right" href="/outcome-liquidity">
+    Quoting outcomes on the book and through Skew.
+  </Card>
+  <Card title="Fees" icon="coins" href="/fees">
+    Fee tiers and rate limits in Growth Mode.
+  </Card>
+  <Card title="Trading calendar" icon="calendar-days" href="/trading-calendar">
+    Index sessions, holiday closures and outcome expiries.
+  </Card>
+</Columns>
+
+## Eligibility
+
+SHCU is not available in restricted jurisdictions or to restricted persons. Each participant is responsible for confirming that it may lawfully access Hyperliquid and trade SHCU. See [Risk disclosures](/risk-disclosures).
