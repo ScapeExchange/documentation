@@ -1,0 +1,94 @@
+---
+title: "Scape"
+sidebarTitle: "Introduction"
+description: "Scape builds derivatives markets on the prices the physical economy runs on. The first is Shanghai copper."
+---
+
+**SHCU** is a perpetual future and a set of outcome markets on the China Copper Spot Index. It is quoted in CNY per tonne, the unit Shanghai trades in, and settled in USDC. It trades 24 hours a day, 7 days a week on Hyperliquid.
+
+<Columns cols={2}>
+  <Card title="Getting started" icon="rocket" href="/getting-started">
+    Place a first trade and read the ticket in CNY per tonne.
+  </Card>
+  <Card title="Contract specification" icon="file-text" href="/contract-specification">
+    Every term of `io:SHCU`, with the quanto mechanics and the hedge ratio.
+  </Card>
+  <Card title="Oracle" icon="activity" href="/oracle">
+    How the price behaves while Shanghai is open, closed and reopening.
+  </Card>
+  <Card title="API integration" icon="code" href="/api-integration">
+    Identifiers, market data and order conventions on Hyperliquid.
+  </Card>
+</Columns>
+
+## SHCU at a glance
+
+| | |
+| --- | --- |
+| Perpetual | `io:SHCU` on Hyperliquid mainnet, a HIP-3 market listed on Entropy's `io` dex |
+| Outcome markets | SHCU Monthly Touch and SHCU Quarterly Close, HIP-4 markets deployed by Skew |
+| Benchmark | China Copper Spot Index (SGPI-CA-INDEX), administered by Price Index SG |
+| Quotation | CNY per tonne |
+| Contract | 1 tonne. Each 1 CNY/t move pays 1 USDC per contract |
+| Collateral and settlement | USDC |
+| FX conversion | None |
+| Trading hours | 24/7 |
+| Leverage | Up to 10×, isolated margin |
+| Open interest cap | $100M, expanding in gated stages to $1B |
+| Base-tier fees | 0.9 bp taker, 0.3 bp maker |
+
+## Why Shanghai copper
+
+More than half of the world's refined copper is consumed in China, and it is priced in Shanghai: in CNY per tonne, VAT-inclusive, off the SHFE futures curve plus a physical premium. That price is not the COMEX price in different units. Over the last year the index traded between 61 bps below and 65 bps above the SHFE dominant contract, and the Shanghai–London relationship moves with FX, import arbitrage and domestic inventory.
+
+Three things follow.
+
+1. **The reference matters.** A fabricator or trader with CNY-priced copper is hedged by the Shanghai price, not by a USD-per-pound contract plus an FX leg. SHCU makes the Shanghai reference directly tradable.
+2. **The local market is closed most of the week.** The Shanghai copper market is open 38.75 hours a week. SHCU trades through the other 129, including weekends and the week-long national holidays.
+3. **The spread becomes tradable on one venue.** Other onchain copper perpetuals reference COMEX in USD per pound. SHCU sits beside them on Hyperliquid in the native Shanghai quotation.
+
+## Design principles
+
+**Native quotation.** The oracle is the index in CNY per tonne. No FX rate, unit conversion, scaling factor or foreign price level is applied at any point. A screen price of 110,383 means 110,383 CNY per tonne.
+
+**One oracle, auditable in every regime.** During Shanghai hours the oracle is the index print, unmodified. Outside them it is discovered from SHCU's own order book inside published bounds. Every update carries its session state, anchor, band and freshness.
+
+**Bounded off-hours discovery.** The market keeps trading when Shanghai is closed, and the oracle follows it deliberately: a 30-minute time constant, a 50 bp per-update clamp, and a ±1,000 bp band around the last index value. Every scheduled reopen in the 12-month calibration sample landed inside one third of that band.
+
+**A licensed benchmark.** SHCU references a benchmark with a published methodology and an independent administrator. Scape holds the license for onchain derivatives on it, and that license is exclusive within onchain derivatives.
+
+**Liquidity held to a standard.** Anchor market makers quote under contractual spread, depth and uptime obligations that are measured by the second. The open interest cap only rises when measured depth, demand, liquidation performance and oracle performance meet published gates.
+
+**One reference across products.** The perpetual and the outcome markets settle against the same oracle, so an outcome position can be hedged in the perpetual with no basis between the hedge and the settlement price.
+
+## Who trades it
+
+| Participant | Use |
+| --- | --- |
+| Dealers and physical businesses | Hedge CNY-priced copper inventory, purchases and sales without an FX leg or a futures roll |
+| Relative-value desks | Trade Shanghai against SHFE, LME and COMEX, and trade the off-hours gap |
+| Market makers | Quote a contract with a 1.00 beta to SHFE and published reference behavior in every session state |
+| Directional traders | Hold, resize or exit Shanghai copper exposure at any hour |
+
+## Where to go next
+
+| If you want to | Read |
+| --- | --- |
+| Place a first trade | [Getting started](/getting-started) |
+| See who does what and what is verifiable onchain | [Architecture](/architecture) |
+| Understand the reference price | [Benchmark](/benchmark) |
+| Get the contract terms | [SHCU contract specification](/contract-specification) |
+| Know exactly how the price behaves when Shanghai is closed | [Oracle](/oracle), [Mark price](/mark-price) |
+| Cost a position | [Funding](/funding), [Fees](/fees) |
+| Size risk | [Margin and liquidation](/margin-and-liquidation), [Open interest caps](/open-interest-caps) |
+| Trade discrete outcomes | [Outcome markets](/outcome-markets), [Outcome liquidity](/outcome-liquidity) |
+| Make markets or hedge | [Liquidity program](/liquidity-program), [Index behavior and hedging](/index-behavior-and-hedging) |
+| Integrate | [API integration](/api-integration) |
+| Plan around Shanghai sessions and holidays | [Trading calendar](/trading-calendar) |
+| Understand how the market is run | [Operations and change control](/operations-and-change-control), [Risk disclosures](/risk-disclosures), [Changelog](/changelog) |
+| Get a short answer | [FAQ](/faq) |
+| Look up a term | [Glossary](/glossary) |
+
+<Note>
+  Scape is the trading name of Seneca Research, Inc. SHCU is not available in restricted jurisdictions. See [Risk disclosures](/risk-disclosures). Documentation current as of November 2026.
+</Note>

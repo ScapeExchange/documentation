@@ -1,0 +1,143 @@
+---
+title: "Outcome markets"
+description: "SHCU outcome markets are fully collateralized Yes/No contracts on the level of Shanghai copper. They resolve on the same oracle as the io:SHCU perpetual and pay 1 USDC per winning share. They are HIP-4 markets on Hyperliquid, deployed and settled by Skew."
+---
+
+## Products
+
+| Product | Question | Template | Tenor | Listed | Pays Yes |
+| --- | --- | --- | --- | --- | --- |
+| **SHCU Monthly Touch** | Will SHCU reach this level at any time before expiry? | `priceTouch` | Monthly | 4 targets | On first touch. Settles early |
+| **SHCU Quarterly Close** | Will SHCU close above this level on expiry day? | `binaryPrice` | Quarterly | 3 strikes | At expiry only |
+
+Seven outcomes are live at any time, and 60 are listed per year: 48 monthly targets and 12 quarterly strikes.
+
+<Info>
+  Both products resolve on the SHCU oracle, the same reference as the `io:SHCU` perpetual. A hedge in the perpetual carries no basis to the settlement price.
+</Info>
+
+## How an outcome share works
+
+| | |
+| --- | --- |
+| Tokens | Each outcome has a Yes token and a No token |
+| Price | Between 0 and 1 USDC. The Yes price reads as the market's probability |
+| Collateral | Fully collateralized. One Yes plus one No is always worth exactly 1 USDC |
+| Leverage and liquidation | None. The most a buyer can lose is the premium paid |
+| Order book | Yes and No books are merged. Buying Yes at `p` is the same order as selling No at `1 − p` |
+| Settlement | Yes converts to 1 USDC and No to 0 if the outcome resolves Yes, and the reverse if it resolves No |
+| Settlement currency | USDC |
+| Size | Whole shares |
+
+## Design basis: SHFE copper options
+
+Strikes and expiries follow SHFE copper futures options, so the grid is the one copper desks already use. Collateral and settlement follow HIP-4.
+
+| Parameter | SHFE copper option | SHCU outcome markets |
+| --- | --- | --- |
+| Underlying | SHFE copper futures, 5 tonnes | SHCU oracle |
+| Price | Premium in CNY/t | Probability, 0 to 1 USDC |
+| Strike grid | 500, 1,000 or 2,000 CNY/t by price level | Same grid. 2,000 CNY/t above 80,000 |
+| Strikes listed | Settlement ± 1.5× daily limit | Touch: ATM ± 2 and ± 4 intervals. Close: ATM and ATM ± 4 intervals |
+| Style | American | Touch pays on first touch. Close resolves at expiry |
+| Expiry | 5th-last trading day of the month before the futures delivery month | The same day, at 07:00 UTC (15:00 Beijing) |
+| Settlement | Exercise into a futures position | Cash, in USDC |
+| Margin | Seller posts margin | Fully collateralized |
+
+**ATM** is the SHCU reference price at listing, rounded to the nearest strike interval.
+
+## SHCU Monthly Touch
+
+| Term | Specification |
+| --- | --- |
+| Market | One per month, named by expiry month: *SHCU Monthly Touch Nov 2026* |
+| Outcomes | 4 `priceTouch` targets: 2 above and 2 below ATM |
+| Targets | ATM ± 2 and ATM ± 4 strike intervals. With a 2,000 CNY/t interval: ± 4,000 and ± 8,000 CNY/t |
+| Listing | On the prior month's expiry |
+| Touch condition | The SHCU oracle is at or beyond the target at any time before the resolution time |
+| Resolution time | 07:00 UTC on the SHFE copper option expiry day |
+| Settlement, Yes | Settled to 1 within 1 hour of the touch |
+| Settlement, No | Settled to 0 at expiry |
+| Disruption | Per the `priceTouch` template |
+
+**The touch is monitored on the oracle in every session state.** During Shanghai hours that is the index. Outside them it is the bounded-discovery oracle, which follows the SHCU book with a 30-minute time constant inside a ±1,000 bps band. A touch outside Shanghai hours therefore requires the SHCU book's impact mid to trade beyond the target for long enough to carry the oracle there. At a reopen the oracle steps to the first fresh index print, and a step through the target is a touch. See [Oracle](/oracle).
+
+## SHCU Quarterly Close
+
+| Term | Specification |
+| --- | --- |
+| Market | One per quarter, named by expiry month: *SHCU Quarterly Close Dec 2026* |
+| Outcomes | 3 `binaryPrice` strikes |
+| Strikes | ATM and ATM ± 4 strike intervals. With a 2,000 CNY/t interval: ATM and ± 8,000 CNY/t |
+| Listing | On the prior quarter's expiry |
+| Expiry | SHFE copper option expiry day in March, June, September and December |
+| Resolution price | 300-second TWAP of the SHCU oracle ending at the resolution time |
+| Resolution time | 07:00 UTC (15:00 Beijing) on expiry day |
+| Resolution | Yes if the resolution price is above the strike. Otherwise No |
+| Settlement | Settled to 1 or 0 within 1 hour of the resolution time |
+| Disruption | If the oracle is stale for the full window: the same window on the prior Shanghai trading day |
+
+**The Close resolves on index prints.** The TWAP window is 14:55 to 15:00 Beijing time, the last five minutes of the Shanghai afternoon session. In that window the oracle is the index in passthrough. Off-hours discovery plays no part in a Quarterly Close resolution unless the disruption rule applies. A resolution price exactly equal to the strike resolves No.
+
+## Series listed off the 29 October 2026 reference
+
+Reference: SHCU oracle 110,383 CNY/t at 08:00 UTC on 29 October 2026. ATM 110,000. Strike interval 2,000 CNY/t.
+
+| Market | Outcome | Side |
+| --- | --- | --- |
+| SHCU Monthly Touch Nov 2026 | Will SHCU rise to 118,000 CNY/t by 24 Nov 2026? | Up |
+| | Will SHCU rise to 114,000 CNY/t by 24 Nov 2026? | Up |
+| | Will SHCU fall to 106,000 CNY/t by 24 Nov 2026? | Down |
+| | Will SHCU fall to 102,000 CNY/t by 24 Nov 2026? | Down |
+| SHCU Quarterly Close Dec 2026 | Will SHCU close above 118,000 CNY/t on 25 Dec 2026? | ATM + 4 |
+| | Will SHCU close above 110,000 CNY/t on 25 Dec 2026? | ATM |
+| | Will SHCU close above 102,000 CNY/t on 25 Dec 2026? | ATM − 4 |
+
+24 November 2026 and 25 December 2026 are the SHFE CU2612 and CU2701 option expiry days.
+
+## Template parameters
+
+| Field | SHCU Monthly Touch | SHCU Quarterly Close |
+| --- | --- | --- |
+| Template | `priceTouch` | `binaryPrice` |
+| `perp` | SHCU | SHCU |
+| Level | `target`, CNY/t | `threshold`, CNY/t |
+| `time` | Expiry day, 07:00 UTC | Expiry day, 07:00 UTC |
+| `seconds` | — | 300 |
+| `priceDescription` | — | SHCU oracle, 300 s TWAP |
+| `deployerFeeScale` | 0.5 | 0.5 |
+
+## Pricing and hedging
+
+**One reference.** The outcomes and the perpetual read the same oracle. A market maker who hedges an outcome in `io:SHCU` carries no basis between the hedge instrument and the settlement price. The residual risks are the ones inherent to the payoff: gamma near the strike into expiry, and gap risk across closures.
+
+**Close.** A Quarterly Close Yes share is a cash-or-nothing digital call on the five-minute TWAP. Its price is the risk-neutral probability that the TWAP finishes above the strike. The three strikes together mark three points on the market-implied distribution of Shanghai copper at quarter end.
+
+**Touch.** A Monthly Touch Yes share is a one-touch barrier on the oracle path. For a driftless underlying, the probability of touching a level before expiry is close to twice the probability of finishing beyond it, which gives a first check between Touch prices and digital prices at the same level.
+
+**Strikes are in CNY/t and the payout is a fixed 1 USDC.** There is no quanto adjustment on the payout. The quanto treatment applies only to the perpetual used as the hedge. See [SHCU contract specification](/contract-specification).
+
+## Fees
+
+| Action | Base-tier fee |
+| --- | --- |
+| Opening a position or minting a pair | None |
+| Closing as taker | 0.105% of notional |
+| Closing as maker | 0.060% of notional |
+| Settlement | 0.105% of the payout, so it falls on the winning side |
+| Maker rebates | None |
+
+These are Hyperliquid's outcome rates multiplied by 1.5, which is what a `deployerFeeScale` of 0.5 produces. Volume tiers and staking discounts apply. See [Fees](/fees).
+
+## Settlement integrity
+
+Outcomes are settled onchain by the deployer strictly according to the template parameters above. HIP-4 has no trader dispute window. A HIP-4 deployer's 500,000 HYPE stake can be slashed by validator vote for a poorly defined market, a settlement that does not follow its template, or a market left unsettled for more than one week.
+
+## Where to trade
+
+| Route | Access |
+| --- | --- |
+| HyperCore outcome order books, directly | Any Hyperliquid interface that lists outcome markets, and the Hyperliquid API |
+| Skew matching | Interfaces integrated with Skew. A user's order is matched with market makers' firm quotes and both are sent to the same HyperCore book |
+
+Both routes trade on the same book and produce the same HIP-4 position. See [Outcome liquidity](/outcome-liquidity). Asset identifiers and order conventions are in [API integration](/api-integration).

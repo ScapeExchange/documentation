@@ -1,0 +1,93 @@
+---
+title: "Margin and liquidation"
+description: "SHCU is isolated-margin only. Each position is collateralized on its own in USDC, and a loss on SHCU cannot draw on the rest of an account."
+---
+
+## Margin tiers
+
+Leverage steps down as position notional grows.
+
+| Position notional from | Max leverage | Initial margin | Maintenance margin | Maintenance deduction |
+| --- | --- | --- | --- | --- |
+| $0 | 10× | 10.0% | 5.0% | $0 |
+| $5,000,000 | 5× | 20.0% | 10.0% | $250,000 |
+| $20,000,000 | 3× | 33.3% | 16.7% | $1,583,333 |
+
+Notional is |size| × mark price in USDC.
+
+```text
+maintenance margin = notional × maintenance rate − deduction
+```
+
+The deduction makes the requirement continuous across tier boundaries: a position pays each tier's rate only on the notional inside that tier.
+
+| Notional | Maintenance margin | Effective rate |
+| --- | --- | --- |
+| $2,000,000 | $100,000 | 5.0% |
+| $10,000,000 | $750,000 | 7.5% |
+| $30,000,000 | $3,416,667 | 11.4% |
+
+## Liquidation price
+
+A position is liquidated when its isolated margin plus unrealized PnL falls below the maintenance margin, measured at the mark price.
+
+For a position in the first tier opened at entry price `E` with leverage `L`:
+
+```text
+long   liquidation = E × (1 − 1/L) ÷ (1 − 0.05)
+short  liquidation = E × (1 + 1/L) ÷ (1 + 0.05)
+```
+
+| Leverage | Long liquidated at | Short liquidated at |
+| --- | --- | --- |
+| 10× | −5.26% | +4.76% |
+| 5× | −15.79% | +14.29% |
+| 3× | −29.82% | +26.98% |
+| 2× | −47.37% | +42.86% |
+
+Adding margin to an isolated position moves its liquidation price away. Funding payments are settled against the position's margin and move the liquidation price over time.
+
+## Leverage and the off-hours band
+
+The oracle's off-hours discovery band is ±1,000 bps, which equals the initial margin of a 10× position. The band limits the oracle. It does not limit the mark, and liquidation is on the mark, which follows the SHCU book. A 10× position can therefore be liquidated during a closure if the book moves 5% against it and stays there. Positions that should survive a normal reopen gap without intervention are sized against the gap history, not against maximum leverage.
+
+| Closure | Largest reopen gap in 12 months | Share of the 10× liquidation distance (476 bps, short side) |
+| --- | --- | --- |
+| Evening gap | 330 bps | 69% |
+| Weekend | 237 bps | 50% |
+| Holiday | 274 bps | 58% |
+
+No scheduled reopen in the sample was large enough, on its own, to liquidate a 10× position opened at the prior close. The margin of safety at 10× is thin, and it is wider at 5×, where the liquidation distance is 1,429 bps. Gap statistics are in [Oracle](/oracle).
+
+<Warning>
+  At 10×, a long is liquidated 5.26% below entry and a short 4.76% above it. Liquidation uses the mark price and can happen at any hour.
+</Warning>
+
+## Liquidation process
+
+Liquidation is performed by HyperCore under Hyperliquid's protocol rules. Scape and the deployer do not take over positions.
+
+1. **Book liquidation.** When a position's margin falls below maintenance, HyperCore closes it with market orders sent to the SHCU order book. Any account can trade against them.
+2. **Partial liquidation.** For a liquidatable position larger than 100,000 USDC, the first order is for 20% of the position. If the position is still liquidatable during the 30 seconds that follow, liquidation orders are for the whole of it.
+3. **Remaining margin.** If the position is closed at a better price than its bankruptcy price, what is left of the isolated margin is returned to the trader.
+4. **Auto-deleveraging.** If the position cannot be closed at a price that leaves non-negative equity, HyperCore closes it against opposing positions. Those positions are ranked by unrealized profit and leverage, highest first, and are closed at the mark price that preceded the event.
+
+Because margin is isolated, a liquidation in SHCU takes the SHCU position and its margin only. The rest of the account is untouched.
+
+Scheduled open interest increases require that no auto-deleveraging and no loss beyond maintenance margin has occurred in the measurement window. See [Open interest caps](/open-interest-caps).
+
+## Position limits
+
+There is no per-account position limit beyond the margin tiers. Aggregate exposure is limited by the open interest cap. When the cap is reached, HyperCore rejects orders that would increase open interest and continues to accept orders that reduce it.
+
+## Mark-price protections
+
+| Protection | Effect |
+| --- | --- |
+| Median of three | No single print, and no single input, sets the mark |
+| 150-second basis EWMA | A displaced book has to stay displaced to move the oracle-plus-basis component |
+| 1% per-update clamp | The mark cannot jump. A large move takes several 3-second updates |
+| Impact-price target | Off-hours discovery reads the book at depth, not at the top |
+| Open interest cap | Total position size is limited in proportion to measured depth |
+
+See [Mark price](/mark-price).

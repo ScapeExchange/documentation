@@ -1,0 +1,112 @@
+---
+title: "Benchmark"
+description: "SHCU references the China Copper Spot Index, a continuous price index for copper cathode in the East China spot market, published by Price Index SG."
+---
+
+## Index identity
+
+| | |
+| --- | --- |
+| Index name | China Copper Spot Index |
+| Index code | SGPI-CA-INDEX |
+| Index type | Price index |
+| Administrator and publisher | Price Index SG (PRICE INDEX (SG) PTE. LTD.) |
+| Underlying commodity | Copper cathode |
+| Quotation unit | CNY per tonne, VAT-inclusive |
+| Minimum price fluctuation | CNY 10 per tonne |
+| Precision | 2 decimal places |
+| Publication frequency | Up to 2 ticks per second during sessions |
+| Methodology | Version 1.0, October 2026 |
+
+## Construction
+
+The index anchors to the East China copper spot market, the core consumption and distribution region for copper in China. At any valid time *t*:
+
+```text
+Index(t) = P_futures(t) + Basis(t)
+```
+
+| Term | Definition |
+| --- | --- |
+| `P_futures(t)` | Latest valid traded price of the most liquid (dominant) SHFE copper futures contract |
+| `Basis(t)` | The real-time premium or discount of the East China spot market to that contract |
+
+The futures leg carries the intraday movement and the liquidity of the SHFE copper contract. The basis leg sets the level against physical copper. The result is a continuous series that reflects what spot copper is worth in Shanghai at each moment, with no roll.
+
+## Calendar and hours
+
+The index publishes on mainland China statutory working days, in step with the Chinese copper futures market. It does not publish on statutory holidays. Temporary closures and adjusted arrangements announced by the Chinese futures exchanges take precedence over the base calendar.
+
+| Session | Beijing time (UTC+8) | UTC |
+| --- | --- | --- |
+| Morning 1 | 09:00 – 10:15 | 01:00 – 02:15 |
+| Morning 2 | 10:30 – 11:30 | 02:30 – 03:30 |
+| Afternoon | 13:30 – 15:00 | 05:30 – 07:00 |
+| Night | 21:00 – 01:00 (next day) | 13:00 – 17:00 |
+
+That is 7.75 hours per trading day and 38.75 hours in a normal week. China does not observe daylight saving time, so the UTC times are fixed all year. Scheduled holiday closures are listed in [Trading calendar](/trading-calendar).
+
+## Data handling
+
+The administrator applies four cleaning rules to incoming market data.
+
+| Condition | Treatment |
+| --- | --- |
+| No new tick in the current window | Carry forward the latest valid snapshot from the current trading day |
+| Snapshot timestamped outside the current trading day | Invalid. The index waits for the first valid trade of the current trading day |
+| Latest price that is zero, negative or non-numeric, or an abnormal volume field | Discarded |
+| Duplicate or out-of-order timestamps | De-duplicated on the millisecond timestamp. Newer data overwrites older data and the series stays monotonic in time |
+
+## Governance and independence
+
+Price Index SG formulates, maintains and periodically reviews the methodology. It retains sole control over determination, administration, review, correction, suspension and discontinuation of the index. Major methodology changes are announced in advance through the administrator's official channels.
+
+Scape uses the index under license from Price Index SG. The license preserves the administrator's independence:
+
+- Scape cannot direct an index determination.
+- Scape does not receive an index value before its authorized release and has no access to unpublished benchmark information.
+- The commercial relationship does not affect the administrator's methodology or determinations.
+
+## How SHCU uses the index
+
+| Use | Detail |
+| --- | --- |
+| Active-session oracle | The index print is passed through as the SHCU oracle with no transformation. See [Oracle](/oracle) |
+| Off-hours anchor | The last valid index print anchors the bounded discovery band while Shanghai is closed |
+| External reference | The last index print is submitted to HyperCore as the market's external reference price |
+| Outcome settlement | Outcome markets resolve on the SHCU oracle. The Quarterly Close resolves in the last five minutes of the Shanghai afternoon session, when the oracle is the index. See [Outcome markets](/outcome-markets) |
+
+<Warning>
+  Outside publication hours the SHCU oracle is calculated from SHCU's own market. Those off-hours values are Scape-calculated. They are not assessments by Price Index SG and are not approved by it.
+</Warning>
+
+## Corrections
+
+If the administrator corrects or restates an index value, the correction applies prospectively. Trades, funding payments, liquidations and outcome settlements that are already final are not reopened.
+
+## Continuity
+
+If the index is interrupted, the oracle follows the stale-feed ladder described in [Oracle](/oracle): it holds, then switches to bounded discovery until fresh prints resume. If the index is materially changed or discontinued, the license provides for a transition to a successor reference and for continued delivery of the data needed to manage, fund, settle and close open positions through a wind-down period. The procedure is in [Operations and change control](/operations-and-change-control).
+
+## License
+
+Scape holds a license from Price Index SG to use the index and its continuous feed to create, list, operate and settle financial products. Within onchain derivatives, including perpetuals, dated futures, options and outcome markets, that license is exclusive.
+
+Oracle values published to Hyperliquid are publicly observable. Observing them does not grant a license to the underlying benchmark data. Redistribution of index data as a data product requires a license from Price Index SG.
+
+## Index against SHFE
+
+Over 240 matched trading days from September 2025 to September 2026:
+
+| Measure | Value |
+| --- | --- |
+| Daily return correlation with the SHFE dominant contract | 0.997 |
+| Beta to SHFE, 15-minute bars | 1.00 |
+| Median basis to SHFE | +3.7 bps |
+| Basis, 5th to 95th percentile | −23 to +41 bps |
+
+Full results are in [Index behavior and hedging](/index-behavior-and-hedging).
+
+<Note>
+  Price Index SG does not sponsor, endorse, operate, broker, clear, market, sell, act as counterparty to or guarantee SHCU or any Scape product. Index data is provided "as is". This page summarizes the published methodology and does not replace it.
+</Note>

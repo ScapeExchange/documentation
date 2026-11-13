@@ -1,0 +1,129 @@
+---
+title: "Fees"
+description: "SHCU trades under Hyperliquid's fee schedule with HIP-3 Growth Mode switched on. At the base tier the all-in fee is 0.9 bp for takers and 0.3 bp for makers. There is no separate Scape fee."
+---
+
+## Perpetual fees
+
+| Setting | Value |
+| --- | --- |
+| Growth Mode | On |
+| Deployer fee scale | 1.0 |
+
+Growth Mode reduces the all-in fee on a HIP-3 market by 90%. With a deployer fee scale of 1.0, the all-in rate is 0.2 × Hyperliquid's standard perpetual rate at each tier.
+
+| Tier | 14-day weighted volume | Taker | Maker |
+| --- | --- | --- | --- |
+| 0 | — | 0.0090% | 0.0030% |
+| 1 | > $5M | 0.0080% | 0.0024% |
+| 2 | > $25M | 0.0070% | 0.0016% |
+| 3 | > $100M | 0.0060% | 0.0008% |
+| 4 | > $500M | 0.0056% | 0.0000% |
+| 5 | > $2B | 0.0052% | 0.0000% |
+| 6 | > $7B | 0.0048% | 0.0000% |
+
+Fee tiers are account-wide across Hyperliquid perpetuals, HIP-3 perpetuals and spot.
+
+### Staking discounts
+
+HYPE staking discounts apply on top of the volume tier. At volume tier 0:
+
+| Staking tier | Discount | Taker | Maker |
+| --- | --- | --- | --- |
+| None | — | 0.00900% | 0.00300% |
+| Wood | 5% | 0.00855% | 0.00285% |
+| Bronze | 10% | 0.00810% | 0.00270% |
+| Silver | 15% | 0.00765% | 0.00255% |
+| Gold | 20% | 0.00720% | 0.00240% |
+| Platinum | 30% | 0.00630% | 0.00210% |
+| Diamond | 40% | 0.00540% | 0.00180% |
+
+The two discounts multiply. A Diamond-tier account at volume tier 6 pays 0.00288% as a taker. Hyperliquid referral discounts apply as on any market.
+
+### What a trade costs
+
+| Trade | Base-tier fee |
+| --- | --- |
+| $1,000,000 taker | $90 |
+| $1,000,000 maker | $30 |
+| Round trip, $1,000,000 in and out as a taker | $180, or 1.8 bps |
+
+For comparison, the same $1,000,000 taker order costs $450 on a Hyperliquid validator-operated perpetual at the base tier and $900 on a HIP-3 market without Growth Mode.
+
+### Growth Mode and account limits
+
+Growth Mode scales three account-level credits by the same 90%. Desks that route significant size through SHCU should plan for them.
+
+| Credit | In Growth Mode |
+| --- | --- |
+| Volume counted toward your 14-day fee tier | 10% of SHCU volume |
+| Maker rebates and maker-share credit | 10% of standard |
+| Volume counted toward address-based API rate limits | 10% of SHCU volume |
+
+## Where fees go
+
+Trading fees are divided between the Hyperliquid protocol and the market's deployer under HIP-3. Hyperliquid directs its share to the community, including the assistance fund. Frontends and routers that use Hyperliquid builder codes may add their own builder fee, which is shown at order entry.
+
+## Funding
+
+Funding is exchanged between longs and shorts. It is not a fee and none of it is retained. See [Funding](/funding).
+
+## Outcome market fees
+
+Outcome markets charge nothing to open a position. A fee is charged only when a position is closed or settled.
+
+| Setting | Value |
+| --- | --- |
+| Base schedule | Hyperliquid's spot schedule: 0.070% taker and 0.040% maker at tier 0 |
+| `deployerFeeScale` | 0.5 |
+| All-in multiple | 1.5× the base rate |
+
+| Action | Base-tier fee |
+| --- | --- |
+| Opening a position, or minting a Yes/No pair | None |
+| Closing as taker | 0.105% of notional |
+| Closing as maker | 0.060% of notional |
+| Merging a Yes/No pair back into USDC | Charged as a close |
+| Settlement | 0.105% of the payout. A losing share pays nothing |
+| Maker rebates | None. A maker order that would earn a rebate pays zero |
+
+| Tier | 14-day weighted volume | Taker | Maker |
+| --- | --- | --- | --- |
+| 0 | — | 0.1050% | 0.0600% |
+| 1 | > $5M | 0.0900% | 0.0450% |
+| 2 | > $25M | 0.0750% | 0.0300% |
+| 3 | > $100M | 0.0600% | 0.0150% |
+| 4 | > $500M | 0.0525% | 0.0000% |
+| 5 | > $2B | 0.0450% | 0.0000% |
+| 6 | > $7B | 0.0375% | 0.0000% |
+
+Notional is shares × price, so the fee on a trade scales with the price of the side being closed. Staking discounts apply as on the perpetual. Only fee-paying outcome volume counts toward an account's fee tier, and a mint counts for nothing.
+
+| Trade | Base-tier fee |
+| --- | --- |
+| Buy 1,000 Yes at 0.40 to open | None |
+| Sell those 1,000 Yes at 0.40 as a taker | 0.42 USDC |
+| Sell them as a maker | 0.24 USDC |
+| Hold 1,000 winning shares to settlement | 1.05 USDC |
+
+See [Outcome markets](/outcome-markets).
+
+## Other costs
+
+| Item | Cost |
+| --- | --- |
+| Deposits and withdrawals | Per Hyperliquid. Scape charges nothing |
+| Gas on trades | None |
+| Liquidation | No separate liquidation fee is charged by Scape or the deployer |
+
+## Fee changes
+
+| Commitment | Detail |
+| --- | --- |
+| Launch setting | The Growth Mode and fee scale above are fixed for at least the first 90 days after mainnet launch |
+| Notice | Any later increase in a Scape-controlled fee setting is announced at least 10 business days in advance |
+| Protocol cooldown | Hyperliquid allows a HIP-3 fee setting to change at most once every 30 days per market |
+| Protocol changes | Changes to Hyperliquid's own schedule pass through as they take effect |
+| No retroactivity | A fee change never applies to trades already executed |
+
+The fee rates applied to your account are returned by Hyperliquid's `userFees` endpoint. Hyperliquid's schedule is published in the [Hyperliquid fee documentation](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees).

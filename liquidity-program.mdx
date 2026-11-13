@@ -1,0 +1,164 @@
+---
+title: "Liquidity program"
+description: "Anyone can make markets in SHCU. The order book is open, there is no maker allow-list, and connectivity is Hyperliquid's standard API."
+---
+
+On top of that open book, **anchor market makers** quote SHCU under a service-level agreement with Scape. The agreement sets spread, depth and uptime obligations for each session state and measures them by the second. This page publishes those standards.
+
+## Quoting regimes
+
+Obligations depend on what a market maker can hedge against at that moment.
+
+| Regime | Applies when |
+| --- | --- |
+| **Active** | A fresh index reference is available: the Shanghai sessions |
+| **Off-hours, hedge open** | The index is not publishing, and external copper hedge markets are meaningfully available |
+| **Off-hours, hedge closed** | The index is not publishing, and major external copper hedge markets are materially unavailable, including weekends |
+| **Stress Level 1** | An objective stress trigger is active. Obligations are relaxed |
+| **Stress Level 2** | A severe market-integrity, oracle, venue, settlement or legal event. Obligations are suspended |
+
+Mainland China statutory holidays are not a separate regime. They map to hedge open or hedge closed according to actual hedge availability.
+
+In a normal week the Shanghai sessions cover about 23% of hours, weekday hours with LME or CME copper trading cover about 45%, and the weekend and daily exchange maintenance windows cover about 32%. These shares are indicative and move with holidays and daylight saving.
+
+## Anchor quoting standards
+
+| Regime | Maximum spread | Depth at touch, per side | Cumulative depth, per side | Coverage: hard / target |
+| --- | --- | --- | --- | --- |
+| Active | 15 bps. Target about 10 bps | $50,000 | $200,000 within 25 bps. Stretch target $250,000 | 90% / 95%+ |
+| Off-hours, hedge open | 25 bps | $25,000 | $100,000 within 50 bps | 85% / 90%+ |
+| Off-hours, hedge closed | 50 bps | $10,000 | $50,000 within 100 bps | 70% / 80%+ |
+| Stress Level 1 | 2× the regime limit | 50% of the regime requirement | 50% of the regime requirement | About 70% |
+| Stress Level 2 | Suspended | Suspended | Suspended | Suspended |
+
+These are per-maker obligations. Market-wide depth requirements that govern the open interest cap are in [Open interest caps](/open-interest-caps).
+
+### Definitions
+
+| Term | Definition |
+| --- | --- |
+| Spread | 10,000 × (best qualifying ask − best qualifying bid) ÷ reference price |
+| Touch depth | Executable displayed size at the maker's best qualifying bid and best qualifying ask |
+| Cumulative depth within X bps | Bids priced no lower than X bps below the reference, and asks priced no higher than X bps above it |
+| Dollar amounts | USDC notional: \|size\| × order price. No FX conversion is applied |
+| Qualifying quote | A bona fide, firm, displayed order on the HyperCore book from a designated account |
+
+Bid and ask are measured separately. Excess size on one side does not cure a shortfall on the other.
+
+## Measurement
+
+**Time-weighted qualifying seconds.** A second counts toward coverage only if bid depth, ask depth, spread and price centering all meet the regime's standard at the same time.
+
+**Each regime is scored on its own.** Strong performance in one regime does not offset a failure in another.
+
+**Scorecard.** Each month a maker receives a score from 0 to 100.
+
+| Component | Weight |
+| --- | --- |
+| Spread quality | 40 |
+| Depth quality | 35 |
+| Coverage | 25 |
+
+Where a metric has both a hard standard and a target:
+
+| Performance | Credit |
+| --- | --- |
+| At or better than target | 100% |
+| Between hard standard and target | Linear, from 50% at the hard standard to 100% at the target |
+| Exactly at the hard standard | 50% |
+| Worse than the hard standard | 0% for that observation, and a failure of the hard standard |
+
+An Active-session spread of 12 bps, between the 15 bp hard standard and the 10 bp target, earns 80% spread credit for that observation.
+
+**Source of truth.** Scores are machine-calculated from Hyperliquid order-book and account data, regime logs and reference-price observations. Makers receive a monthly scorecard, can dispute calculation, data or regime-classification errors, and the underlying observations are retained for reconciliation.
+
+## Reference prices for scoring
+
+Quotes are scored for centering against a reference that the maker's own orders cannot move.
+
+| Regime | Scoring reference |
+| --- | --- |
+| Active | The fresh index-derived reference |
+| Off-hours | The **Liquidity Reference Price (LRP)** |
+
+The LRP starts from the last valid index value and moves it with independent external copper and FX inputs. The local SHCU order book carries **0% numerical weight** in it. Local book data is used only as an anomaly and data-quality signal.
+
+<Note>
+  The LRP is published, deterministic and auditable. It is a measurement tool only. It is not the oracle, it does not enter the mark price, and it does not affect funding. The off-hours oracle is discovered from the SHCU book by design, which is why it is not used to judge the makers who form that book.
+</Note>
+
+## Stress framework
+
+Stress levels are entered and exited on objective, documented triggers, automatically where a trigger is machine-verifiable. No stress level is declared or removed retroactively.
+
+| Trigger category | Level 1 | Level 2 |
+| --- | --- | --- |
+| Index or oracle staleness during a scheduled session | ● | ● |
+| Oracle submission or control-plane impairment | ● | Safe reference inputs cannot be determined or submitted |
+| Extreme copper or reference volatility over a defined window | ● | ● |
+| Divergence between the LRP and external hedge references | ● | ● |
+| Loss or impairment of major hedge venues | Material but partial | Severe inability to hedge or price |
+| Hyperliquid order entry or cancel impairment | Material degradation | Orders cannot be reliably entered or cancelled |
+| USDC impairment or settlement concern | ● | Severe settlement-integrity impairment |
+| Market-integrity or manipulation event | ● | Severe and unresolved |
+| Legal or regulatory impossibility | — | While performance is prohibited |
+| Terminal trading or settlement action | — | Applies |
+
+## Excluded time
+
+A maker's performance clock stops for events outside its control:
+
+- An outage of a Scape-controlled oracle, reference or control-plane component
+- An index, oracle-provider or data-provider failure
+- A Hyperliquid trading halt, material protocol outage, or inability to reliably submit or cancel orders
+- Announced maintenance
+- Stress Level 2
+- A permitted recalibration pause
+
+A maker's own downtime is not excluded.
+
+## Protections for makers
+
+| Protection | Detail |
+| --- | --- |
+| Recalibration pause | After an emergency parameter change, a maker may pause for up to 60 minutes. After a major risk parameter change, up to 4 hours |
+| Major risk parameter change | A material change to leverage, the margin schedule, the oracle source or methodology, settlement mechanics, the off-hours reference methodology, funding architecture or open interest controls |
+| Notice | Material specification and program changes are notified about 10 business days ahead, except emergency market-protection actions |
+| No retroactivity | No parameter, methodology or scoring change applies to performance already measured |
+| Neutral administration | Scores, regimes and reference inputs are administered by published rules and are not adjusted to favor or penalize any maker |
+
+## Conduct
+
+Liquidity counted under the program must be genuine. Makers quote for their own account through designated accounts and do not use them for:
+
+- Spoofing or layering
+- Wash trades or pre-arranged trades designed to manufacture volume
+- Fictitious, non-bona fide or misleading quotes
+- Manipulation of the SHCU market, the reference price, the LRP, the mark, funding inputs or liquidation mechanics
+- Coordinated trading designed to exploit an oracle, LRP or market-control mechanism
+- Self-trading or submit-and-cancel activity designed to generate credit or false depth
+
+Non-qualifying activity earns no credit.
+
+## Program terms
+
+| | |
+| --- | --- |
+| Appointment | Non-exclusive. Additional makers can be onboarded at any time |
+| Risk | Makers trade for their own account and at their own risk. Scape does not backstop trading losses or guarantee volume, flow or profitability |
+| Information | Anchor makers receive no early access to index values or oracle updates and no privileged look at public order flow |
+| Custody | Scape does not hold maker collateral. Positions and collateral sit in the maker's own Hyperliquid account |
+| Reviews | Day 30, day 90, then quarterly |
+| Outcome markets | Makers quote SHCU outcomes by resting orders on the HyperCore book and by firm quotes through Skew. See [Outcome liquidity](/outcome-liquidity) |
+
+## For desks evaluating SHCU
+
+| Question | Where it is answered |
+| --- | --- |
+| How does the reference behave against SHFE? | [Index behavior and hedging](/index-behavior-and-hedging) |
+| What exactly is the oracle doing in each session state? | [Oracle](/oracle) |
+| How is the hedge sized against a quanto contract? | [Index behavior and hedging](/index-behavior-and-hedging) |
+| What do I pay and what do rate limits look like in Growth Mode? | [Fees](/fees) |
+| How do I connect? | [API integration](/api-integration) |
+
+To discuss anchor participation, contact Scape through scape.exchange.

@@ -1,0 +1,52 @@
+---
+title: "Glossary"
+description: "Terms used across the SHCU documentation."
+---
+
+| Term | Meaning |
+| --- | --- |
+| Active session | A period in which the index is publishing fresh prints: the Shanghai day and night sessions |
+| Anchor | The reference value around which the off-hours discovery band is built. It starts at the last valid index value |
+| Anchor market maker | A market maker quoting SHCU under a service-level agreement with Scape |
+| API wallet | A key approved by a Hyperliquid account to sign orders for it. It cannot withdraw funds |
+| ATM | The SHCU reference price at listing, rounded to the nearest strike interval |
+| Band | The cumulative limit on off-hours oracle movement: ±1,000 bps around the anchor |
+| Basis | Index ÷ SHFE dominant contract − 1. Positive is a spot premium |
+| Basis EWMA | The 150-second exponentially weighted average of (perp mid − oracle), used in the mark price |
+| bps | Basis points. 1 bp is 0.01%. At 110,000 CNY/t, 10 bps is 110 CNY/t |
+| Bounded discovery | The off-hours oracle process: an EMA toward the book's impact mid, clamped per update and limited by the band |
+| Closed session | Any period in which the index is not publishing: breaks, lunch, the evening and overnight gaps, weekends |
+| Contract | One SHCU contract references 1 tonne and pays 1 USDC per 1 CNY/t move |
+| Deployer | The party that stakes HYPE and operates a market on Hyperliquid under HIP-3 or HIP-4 |
+| Dominant contract | The SHFE copper contract with the most open interest on a given day |
+| EMA, EWMA | Exponentially weighted moving average. Here always continuous-time: the weight depends on elapsed time, `1 − exp(−Δt ÷ T)` |
+| Growth Mode | A HIP-3 setting that reduces all-in trading fees by 90% |
+| HIP-3 | Hyperliquid's framework for builder-deployed perpetual markets |
+| HIP-4 | Hyperliquid's framework for outcome markets |
+| HyperCore | Hyperliquid's native order book and margin engine |
+| Impact price | The average fill price for a fixed notional on one side of the book |
+| Impact mid | The midpoint of the impact bid and the impact ask |
+| Index | The China Copper Spot Index (SGPI-CA-INDEX), published by Price Index SG |
+| Isolated margin | Margin held against one position only |
+| Local mark | Median of best bid, best ask and last trade on the SHCU book |
+| LRP | Liquidity Reference Price. The independent off-hours reference used only to score market-maker quotes |
+| Mark price | The price used for margin, liquidation and unrealized PnL: the median of the oracle, the oracle plus the basis EWMA, and the local mark |
+| Merge | Returning one Yes share and one No share of the same outcome for 1 USDC |
+| Merged book | The single order book on which Yes and No trade. A bid for Yes at `p` is an offer of No at `1 − p` |
+| Mint | Creating one Yes share and one No share from 1 USDC. It happens when a buy of Yes trades against a buy of No |
+| Notional | \|size\| × price, in USDC |
+| Oracle | The SHCU reference price in CNY per tonne: the index in an active session, bounded discovery otherwise |
+| Outcome | A fully collateralized Yes/No contract that settles to 1 or 0 USDC |
+| Partial liquidation | The first liquidation order on a position above 100,000 USDC is for 20% of it |
+| Passthrough | The active-session oracle rule: the oracle equals the index print with no transformation |
+| Premium | Impact mid ÷ oracle − 1. The input to funding |
+| Post-only | A limit order that is rejected if it would trade immediately |
+| Quanto | A contract whose underlying is priced in one currency and whose payout is in another, with no exchange rate applied |
+| Re-anchor | A one-time move of the anchor to a band edge during a closure, which lets a sustained move continue |
+| Reopen gap | The move from the last index print before a closure to the first print after it |
+| Share | One unit of one side of an outcome. A winning share settles to 1 USDC and a losing share to 0 |
+| SHFE | Shanghai Futures Exchange |
+| Stale | An index print older than the 5-second freshness threshold during a scheduled session |
+| Strike interval | The SHFE copper option grid: 500, 1,000 or 2,000 CNY/t depending on price level |
+| Tracking error | The typical difference between index and SHFE moves over one bar |
+| TWAP | Time-weighted average price |

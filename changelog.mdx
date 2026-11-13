@@ -1,0 +1,43 @@
+---
+title: "Changelog"
+description: "Every change to a production parameter, to the methodology or to this documentation is recorded here, newest first. The parameters in force are always the ones readable from Hyperliquid and from the oracle feed. Change classes and notice periods are defined in Operations and change control."
+---
+
+<Update label="November 2026" description="Version 1.0">
+
+| Change | Class | Detail |
+| --- | --- | --- |
+| `io:SHCU` listed on Hyperliquid mainnet | Launch | Parameters as published in [SHCU contract specification](/contract-specification). Open interest cap at Stage 1, $100,000,000 |
+| SHCU Monthly Touch Nov 2026 listed | Launch | Four targets: 102,000, 106,000, 114,000 and 118,000 CNY/t. Resolution 24 November 2026, 07:00 UTC |
+| SHCU Quarterly Close Dec 2026 listed | Launch | Three strikes: 102,000, 110,000 and 118,000 CNY/t. Resolution 25 December 2026, 07:00 UTC |
+| Documentation published | Administrative | Version 1.0 |
+
+</Update>
+
+## Parameters in force
+
+A summary of the settings that a change would touch. Each links to the page that defines it.
+
+| Parameter | Value | Since | Page |
+| --- | --- | --- | --- |
+| Maximum leverage | 10×, isolated | Launch | [Margin and liquidation](/margin-and-liquidation) |
+| Open interest cap | $100,000,000 | Launch | [Open interest caps](/open-interest-caps) |
+| Discovery band | ±1,000 bps, 1 re-anchor per direction | Launch | [Oracle](/oracle) |
+| Off-hours time constant | 30 minutes | Launch | [Oracle](/oracle) |
+| Funding multiplier | 0.5 | Launch | [Funding](/funding) |
+| Interest rate | 0.01% per 8 hours | Launch | [Funding](/funding) |
+| Funding premium clamp | 0.03% per 8 hours | Launch | [Funding](/funding) |
+| Perpetual fee setting | Growth Mode on, deployer fee scale 1.0 | Launch | [Fees](/fees) |
+| Outcome fee setting | `deployerFeeScale` 0.5 | Launch | [Fees](/fees) |
+| Index methodology | Version 1.0, October 2026 | Launch | [Benchmark](/benchmark) |
+
+## How entries are written
+
+| Field | Content |
+| --- | --- |
+| Date | The date the change took effect, in UTC |
+| Change | What changed, with the old and the new value |
+| Class | Scheduled, material specification change, fee change, emergency risk action, protocol-mandated or administrative |
+| Detail | The reason, the notice given, and a link to the incident account where there is one |
+
+No change applies to trades executed, funding paid, positions settled or market-maker performance measured before it took effect.

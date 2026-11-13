@@ -1,0 +1,91 @@
+---
+title: "Operations and change control"
+sidebarTitle: "Operations"
+description: "This page describes how SHCU is run: the states the market can be in, what happens when an input fails, who can change a parameter, and how much notice is given."
+---
+
+## Market states
+
+| State | Meaning | Who sets it |
+| --- | --- | --- |
+| Normal | Orders that open, increase, reduce and close positions are accepted | — |
+| Cap reached | Open interest is at the cap. Orders that would increase open interest are rejected | HyperCore, automatically |
+| Reduce-only | Only orders that reduce positions are accepted | Deployer |
+| Halted | Trading is stopped. Under HIP-3 a halt cancels all open orders and settles all positions at the current mark price | Deployer |
+
+A halt is a terminal action for the positions open at that moment. It is used only for a severe integrity event or an orderly discontinuation.
+
+## Degraded operation
+
+The market is designed to keep a defined reference when an input fails.
+
+| Event | Response |
+| --- | --- |
+| Index print older than 5 seconds in a session | Oracle state `stale`. Last valid value held |
+| Index stale beyond 60 seconds | Oracle switches to bounded discovery until fresh prints resume |
+| No impact price on the SHCU book | Off-hours discovery pauses. Oracle holds |
+| No oracle submission for 10 seconds | HyperCore falls back to the local book mark |
+| Oracle at a hard band edge | Oracle holds at the edge and the feed reports `bound = true` |
+| Hyperliquid outage or order-entry impairment | Market-maker obligations are suspended for the period. Trading resumes under protocol rules |
+| Skew matching unavailable | Outcome orders are placed and cancelled directly on the HyperCore book. Orders already routed remain ordinary orders of the account that placed them |
+
+Each of these is visible in the oracle feed metadata or in Hyperliquid's public data as it happens.
+
+## Benchmark events
+
+| Event | Treatment |
+| --- | --- |
+| Correction or restatement of an index value | Applied prospectively. Trades, funding, liquidations and outcome settlements already final are not reopened |
+| Methodology change by the administrator | Announced in advance by Price Index SG. Scape publishes the effect on SHCU, if any, before it takes effect |
+| Feed interruption | The stale-feed ladder above |
+| Suspension or discontinuation | Scape may use an identified successor reference or a commercially reasonable fallback to manage, settle and close open positions. New outcome series are not listed during a wind-down |
+
+The administrator's role and the license are described in [Benchmark](/benchmark).
+
+## Who can change what
+
+| Parameter | Controlled by | Constraint |
+| --- | --- | --- |
+| Index methodology and values | Price Index SG | Administrator's governance |
+| Contract design, benchmark use, oracle methodology | Scape | This change policy |
+| Oracle program inputs: time constants, clamps, bands, re-anchors | Scape and the deployer | This change policy |
+| Leverage, margin tiers, open interest caps, stale-data rules | Deployer | HIP-3 rules. Scape is consulted on material changes |
+| Fee scale and Growth Mode | Deployer, on Scape's specification | At most one change per 30 days per market, by protocol |
+| Outcome listing, parameters and settlement | Outcome deployer, on Scape's specification | HIP-4 templates |
+| Mark-price clamps, funding mechanics, liquidation, fee schedule | Hyperliquid protocol | Protocol governance |
+
+## Change classes and notice
+
+| Class | Examples | Notice |
+| --- | --- | --- |
+| Scheduled | Open interest cap stage increases that have met their gates. New outcome series on the published grid | Announced before taking effect |
+| Material specification change | Benchmark identity or reference source. Session or freshness rules. Oracle or off-hours methodology. Mark or funding architecture. Leverage, margin, settlement or open interest controls | Scape targets at least 10 business days |
+| Fee increase | Any increase in a Scape-controlled fee setting | At least 10 business days. None in the first 90 days after launch |
+| Emergency risk action | Lowering a cap, raising margin, reduce-only, oracle configuration change, halt | Immediate. Documented and announced as soon as practicable |
+| Protocol-mandated | A change to Hyperliquid rules, fee mechanics, rate limits or market requirements | Passes through when it takes effect |
+| Administrative | Corrections and clarifications to documentation that do not alter risk or economics | On publication |
+
+Two rules apply to every class:
+
+- **No retroactivity.** A change never applies to trades executed, funding paid, positions settled or market-maker performance measured before it took effect.
+- **One source of truth.** The parameters in force are always the ones readable from Hyperliquid and from the oracle feed. This documentation is updated to match them, and the [Changelog](/changelog) records the date of each change.
+
+## Incident communication
+
+Material incidents are announced as they are identified and updated until closed: index or oracle incidents, stress-level changes, trading halts and emergency parameter changes. Each incident is followed by a written account of what happened, what the oracle and mark did, and what, if anything, has changed.
+
+## Monitoring
+
+The deployer monitors the market around the clock. The following are tracked continuously and feed the open interest expansion gates:
+
+| Metric | Standard |
+| --- | --- |
+| Index freshness in session | 99.9% of session time |
+| Reopens | Every reopen inside its band |
+| Depth within 50 bps | 1% of the cap in session, 0.5% off-hours, 30-day median |
+| Anchor quote uptime | 95% |
+| Liquidations | No auto-deleveraging and no loss beyond maintenance margin |
+
+## Records
+
+Oracle outputs submitted to Hyperliquid are permanent public records. Regime logs, reference-price observations and market-maker performance data are retained for reconciliation.

@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "almond",
   "name": "SCAPE",
-  "description": "Step-by-step guides for every product—platform setup, analytics, and integrations in one place.",
+  "description": "Documentation for SHCU, the Shanghai copper perpetual and outcome markets on Hyperliquid.",
   "colors": {
     "primary": "#00AB9B",
     "light": "#40D1BF",
@@ -26,7 +26,13 @@
     }
   },
   "contextual": {
-    "options": ["copy", "view", "assistant", "mcp", "add-mcp"]
+    "options": [
+      "copy",
+      "view",
+      "assistant",
+      "mcp",
+      "add-mcp"
+    ]
   },
   "navigation": {
     "directory": "card",
@@ -36,39 +42,63 @@
         "icon": "book-open",
         "expanded": true,
         "pages": [
-          "index"
+          "introduction",
+          "getting-started",
+          "architecture",
+          "benchmark"
         ]
       },
       {
-        "group": "Market Mechanics",
+        "group": "SHCU perpetual",
         "icon": "activity",
         "expanded": true,
         "pages": [
-          "market-mechanics/overview",
-          "market-mechanics/oracle-price",
-          "market-mechanics/mark-price",
-          "market-mechanics/external-price",
-          "market-mechanics/funding",
-          "market-mechanics/fees"
+          "contract-specification",
+          "oracle",
+          "mark-price",
+          "funding",
+          "margin-and-liquidation",
+          "open-interest-caps",
+          "fees",
+          "trading-calendar"
         ]
       },
       {
-        "group": "Assets",
-        "icon": "coins",
+        "group": "Outcome markets",
+        "icon": "target",
         "expanded": true,
         "pages": [
-          "assets/commodities",
-          "assets/fx"
+          "outcome-markets",
+          "outcome-liquidity"
         ]
       },
       {
-        "group": "Risk & Margining",
-        "icon": "shield",
+        "group": "Liquidity",
+        "icon": "droplet",
         "expanded": true,
         "pages": [
-          "risk-and-margining/margin-modes",
-          "risk-and-margining/liquidation-mechanics",
-          "risk-and-margining/auto-deleveraging"
+          "liquidity-program",
+          "index-behavior-and-hedging"
+        ]
+      },
+      {
+        "group": "Developers",
+        "icon": "code",
+        "expanded": true,
+        "pages": [
+          "api-integration"
+        ]
+      },
+      {
+        "group": "Reference",
+        "icon": "library",
+        "expanded": true,
+        "pages": [
+          "operations-and-change-control",
+          "changelog",
+          "risk-disclosures",
+          "faq",
+          "glossary"
         ]
       }
     ]
@@ -89,6 +119,75 @@
     "socials": {
       "x": "https://x.com/yourcompany",
       "linkedin": "https://linkedin.com/company/yourcompany"
+    },
+    "links": [
+      {
+        "header": "Scape",
+        "items": [
+          {
+            "label": "Website",
+            "href": "https://scape.exchange"
+          },
+          {
+            "label": "Risk disclosures",
+            "href": "/risk-disclosures"
+          },
+          {
+            "label": "Changelog",
+            "href": "/changelog"
+          }
+        ]
+      }
+    ]
+  },
+  "banner": {
+    "content": "Preview build for internal review. Not for distribution.",
+    "dismissible": true
+  },
+  "redirects": [
+    {
+      "source": "/market-mechanics/overview",
+      "destination": "/architecture"
+    },
+    {
+      "source": "/market-mechanics/oracle-price",
+      "destination": "/oracle"
+    },
+    {
+      "source": "/market-mechanics/mark-price",
+      "destination": "/mark-price"
+    },
+    {
+      "source": "/market-mechanics/external-price",
+      "destination": "/oracle"
+    },
+    {
+      "source": "/market-mechanics/funding",
+      "destination": "/funding"
+    },
+    {
+      "source": "/market-mechanics/fees",
+      "destination": "/fees"
+    },
+    {
+      "source": "/assets/commodities",
+      "destination": "/contract-specification"
+    },
+    {
+      "source": "/assets/fx",
+      "destination": "/contract-specification"
+    },
+    {
+      "source": "/risk-and-margining/margin-modes",
+      "destination": "/margin-and-liquidation"
+    },
+    {
+      "source": "/risk-and-margining/liquidation-mechanics",
+      "destination": "/margin-and-liquidation"
+    },
+    {
+      "source": "/risk-and-margining/auto-deleveraging",
+      "destination": "/margin-and-liquidation"
     }
-  }
+  ]
 }

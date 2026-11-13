@@ -1,0 +1,136 @@
+---
+title: "FAQ"
+description: "Short answers, each with the page that has the full one."
+---
+
+## The contract
+
+<AccordionGroup>
+
+  <Accordion title="What is SHCU?" defaultOpen>
+    A perpetual future, and a set of outcome markets, on the Shanghai price of copper. The perpetual is `io:SHCU` on Hyperliquid. See [Introduction](/introduction).
+  </Accordion>
+
+  <Accordion title="Is the price in dollars?">
+    No. The price is CNY per tonne, the unit Shanghai trades in. A quote of 110,383 means 110,383 CNY per tonne. See [SHCU contract specification](/contract-specification).
+  </Accordion>
+
+  <Accordion title="Then how is it settled in USDC?">
+    Each 1 CNY/t move pays 1 USDC per contract. No exchange rate is applied anywhere. Notional is size × price, read as USDC.
+  </Accordion>
+
+  <Accordion title="How much copper is one contract?">
+    One contract references one tonne. Because each CNY of price pays a full USDC, one contract carries the dollar delta of about seven tonnes at a USD/CNY rate of 7.00. To hedge physical copper, divide tonnes by USD/CNY.
+  </Accordion>
+
+  <Accordion title="Does the contract expire or roll?">
+    No. It is a perpetual, and the index behind it is a continuous series with no roll.
+  </Accordion>
+
+  <Accordion title="How does it relate to SHFE, LME and COMEX copper?">
+    The index is the SHFE dominant contract plus the East China spot premium. Its beta to SHFE is 1.00 and it has traded within about 65 bps of it. Its relationship to London and New York also carries FX and import arbitrage. See [Index behavior and hedging](/index-behavior-and-hedging).
+  </Accordion>
+
+</AccordionGroup>
+
+## When Shanghai is closed
+
+<AccordionGroup>
+
+  <Accordion title="Shanghai is open under 39 hours a week. What is the price the rest of the time?" defaultOpen>
+    The oracle follows SHCU's own order book, slowly and inside a published band around the last index print. See [Oracle](/oracle).
+  </Accordion>
+
+  <Accordion title="Can I be liquidated at the weekend?">
+    Yes. Margin and liquidation use the mark price, which follows the SHCU book at every hour. The oracle's band does not limit the mark. See [Mark price](/mark-price) and [Margin and liquidation](/margin-and-liquidation).
+  </Accordion>
+
+  <Accordion title="What happens when Shanghai reopens?">
+    The oracle steps to the first index print, and the mark follows at up to 1% per update. The largest reopen gap in the 12-month calibration sample was 330 bps. See [Oracle](/oracle).
+  </Accordion>
+
+  <Accordion title="What about Chinese holidays?">
+    The Shanghai market closes for up to eleven days around Spring Festival and for about a week at National Day. SHCU keeps trading, and the oracle stays within ±1,000 bps of the last index print. See [Trading calendar](/trading-calendar).
+  </Accordion>
+
+  <Accordion title="Do I pay funding when Shanghai is closed?">
+    Yes, every hour. Funding is charged on the gap between the book and the oracle, and that gap closes as the oracle follows the book. See [Funding](/funding).
+  </Accordion>
+
+</AccordionGroup>
+
+## Costs
+
+<AccordionGroup>
+
+  <Accordion title="What are the fees?" defaultOpen>
+    At the base tier, 0.9 bp for takers and 0.3 bp for makers on the perpetual. Outcome markets charge nothing to open and 0.105% to close as a taker. See [Fees](/fees).
+  </Accordion>
+
+  <Accordion title="What does it cost to hold a position?">
+    With the book quoted around the oracle, a long pays 0.005% per 8 hours, about 5.5% a year, and a short receives it. The rate rises or falls with the premium of the book to the oracle.
+  </Accordion>
+
+  <Accordion title="Does Scape charge anything?">
+    No. There is no separate Scape fee, and Scape charges nothing on deposits or withdrawals.
+  </Accordion>
+
+</AccordionGroup>
+
+## Counterparties and custody
+
+<AccordionGroup>
+
+  <Accordion title="Who is on the other side of my trade?" defaultOpen>
+    Another trader on Hyperliquid's order book. Anchor market makers quote under published standards. Scape is not a counterparty to any trade. See [Liquidity program](/liquidity-program).
+  </Accordion>
+
+  <Accordion title="Who holds my funds?">
+    You do, in your own Hyperliquid account under your own keys. Scape does not custody assets.
+  </Accordion>
+
+  <Accordion title="Who can change the rules?">
+    Each party controls a defined set of parameters, with defined notice. See [Operations and change control](/operations-and-change-control).
+  </Accordion>
+
+</AccordionGroup>
+
+## Outcome markets
+
+<AccordionGroup>
+
+  <Accordion title="What are they?" defaultOpen>
+    Yes/No contracts on the level of Shanghai copper that pay 1 USDC per winning share. A Monthly Touch pays if the oracle reaches a level before expiry. A Quarterly Close pays if it finishes above a strike. See [Outcome markets](/outcome-markets).
+  </Accordion>
+
+  <Accordion title="How are they settled?">
+    On the same oracle as the perpetual, by the outcome deployer, under the rules of the HIP-4 template. There is no dispute window.
+  </Accordion>
+
+  <Accordion title="Where do the quotes come from?">
+    From orders resting on the HyperCore outcome book, and from market makers' firm quotes matched by Skew. Both trade on the same book. See [Outcome liquidity](/outcome-liquidity).
+  </Accordion>
+
+</AccordionGroup>
+
+## Access and data
+
+<AccordionGroup>
+
+  <Accordion title="How do I start?" defaultOpen>
+    See [Getting started](/getting-started) for a first trade and [API integration](/api-integration) for a desk.
+  </Accordion>
+
+  <Accordion title="Can I trade from my country?">
+    SHCU is not available in restricted jurisdictions or to restricted persons. Each participant is responsible for confirming that it may lawfully trade. See [Risk disclosures](/risk-disclosures).
+  </Accordion>
+
+  <Accordion title="Where do I see the parameters in force?">
+    On Hyperliquid's public API and in the oracle feed's metadata. Changes are recorded in the [Changelog](/changelog).
+  </Accordion>
+
+  <Accordion title="Can I use the index data?">
+    Oracle values on Hyperliquid are public to observe. Using the index as a data product needs a license from Price Index SG. See [Benchmark](/benchmark).
+  </Accordion>
+
+</AccordionGroup>

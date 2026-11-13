@@ -1,0 +1,213 @@
+---
+title: "API integration"
+description: "SHCU trades on Hyperliquid, so integration is Hyperliquid's public API. There is no separate Scape gateway, key or matching engine. This page gives the identifiers and the calls that matter for SHCU. Hyperliquid's API documentation is the authoritative schema."
+---
+
+## Identifiers
+
+| Item | Mainnet | Testnet |
+| --- | --- | --- |
+| API base URL | `https://api.hyperliquid.xyz` | `https://api.hyperliquid-testnet.xyz` |
+| WebSocket | `wss://api.hyperliquid.xyz/ws` | `wss://api.hyperliquid-testnet.xyz/ws` |
+| Perp dex | `io` | `scpe` |
+| Perpetual coin | `io:SHCU` | `scpe:SHCU` |
+| Outcome coins | `#` followed by the side encoding. See [Outcome markets](#outcome-markets) | — |
+
+HIP-3 markets are addressed by `dex:COIN`. Info requests that take a `dex` field return that dex's universe.
+
+## Units
+
+For the perpetual:
+
+| Field | Unit |
+| --- | --- |
+| Price (`px`, `oraclePx`, `markPx`, `midPx`) | CNY per tonne |
+| Size (`sz`) | Contracts, 1 tonne each, 5 decimals |
+| Notional, margin, PnL, fees, funding | USDC |
+| Notional | \|size\| × price. No FX conversion |
+
+<Warning>
+  A client that assumes a USD price will mis-scale every notional by the exchange rate. Treat the price as a number of USDC per contract.
+</Warning>
+
+## Market data
+
+All info requests are `POST https://api.hyperliquid.xyz/info` with a JSON body.
+
+**Contract metadata and live context**
+
+```bash
+curl -s https://api.hyperliquid.xyz/info \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"metaAndAssetCtxs","dex":"io"}'
+```
+
+The response is `[meta, assetCtxs]`. Find the index of `io:SHCU` in `meta.universe` and read the same index in `assetCtxs`.
+
+| Field | Meaning |
+| --- | --- |
+| `universe[i].szDecimals`, `maxLeverage`, `marginTableId`, margin mode | Contract terms |
+| `assetCtxs[i].oraclePx` | Oracle price |
+| `assetCtxs[i].markPx` | Mark price |
+| `assetCtxs[i].midPx` | Book mid |
+| `assetCtxs[i].impactPxs` | Impact bid and impact ask |
+| `assetCtxs[i].premium` | Latest premium sample: impact mid ÷ oracle − 1 |
+| `assetCtxs[i].funding` | Current hourly funding rate |
+| `assetCtxs[i].openInterest` | Open interest in contracts |
+| `assetCtxs[i].dayNtlVlm` | 24-hour notional volume, USDC |
+
+**Dex configuration, caps and funding multiplier**
+
+```bash
+curl -s https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' \
+  -d '{"type":"perpDexs"}'
+
+curl -s https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' \
+  -d '{"type":"perpDexLimits","dex":"io"}'
+```
+
+**Order book**
+
+```bash
+curl -s https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' \
+  -d '{"type":"l2Book","coin":"io:SHCU"}'
+```
+
+**Funding history**
+
+```bash
+curl -s https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' \
+  -d '{"type":"fundingHistory","coin":"io:SHCU","startTime":1794355200000}'
+```
+
+**Candles**
+
+```bash
+curl -s https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' \
+  -d '{"type":"candleSnapshot","req":{"coin":"io:SHCU","interval":"15m","startTime":1794355200000,"endTime":1794441600000}}'
+```
+
+## Streaming
+
+```json
+{"method":"subscribe","subscription":{"type":"l2Book","coin":"io:SHCU"}}
+{"method":"subscribe","subscription":{"type":"trades","coin":"io:SHCU"}}
+{"method":"subscribe","subscription":{"type":"bbo","coin":"io:SHCU"}}
+{"method":"subscribe","subscription":{"type":"activeAssetCtx","coin":"io:SHCU"}}
+```
+
+`activeAssetCtx` streams the oracle, mark, premium, funding and open interest as they change.
+
+## Orders
+
+Orders use Hyperliquid's standard `exchange` endpoint and signing. Three points are specific to the SHCU perpetual.
+
+| Point | Rule |
+| --- | --- |
+| Asset ID | For builder-deployed perpetuals: `100000 + perp_dex_index × 10000 + index_in_meta`. `perp_dex_index` is the position of `io` in `perpDexs`. `index_in_meta` is the position of `io:SHCU` in that dex's universe |
+| Price | Integer CNY per tonne at current levels. At most 5 significant figures, or any integer |
+| Size | Up to 5 decimals. Minimum order value 10 USDC |
+
+Margin is isolated, and each HIP-3 dex is margined independently of Hyperliquid's main perpetual account. Fund the `io` dex with USDC as Hyperliquid's documentation describes, and set leverage for the asset before the first order.
+
+## Outcome markets
+
+Outcome markets use the same endpoints, signing and order types as the rest of Hyperliquid. The differences are the identifiers and the order conventions.
+
+**Definitions**
+
+```bash
+curl -s https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' \
+  -d '{"type":"outcomeMeta"}'
+```
+
+`outcomeMeta` returns each outcome's id, template, parameters, side names and fee scale. SHCU outcomes are the `priceTouch` and `binaryPrice` instances whose `perp` is SHCU. It does not return coin strings or asset ids. Compute them from the outcome id.
+
+**Identifiers**
+
+Each outcome has two sides. Side 0 is Yes and side 1 is No.
+
+| Item | Rule | Outcome 5150, Yes | Outcome 5150, No |
+| --- | --- | --- | --- |
+| Encoding | `10 × outcome + side` | `51500` | `51501` |
+| Coin for books, orders and fills | `#` + encoding | `#51500` | `#51501` |
+| Coin in spot balances | `+` + encoding | `+51500` | `+51501` |
+| Asset id for orders | `100000000 + encoding` | `100051500` | `100051501` |
+
+The outcome id 5150 is illustrative. Read live ids from `outcomeMeta`.
+
+**Book and orders**
+
+```bash
+curl -s https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' \
+  -d '{"type":"l2Book","coin":"#51500"}'
+```
+
+| Convention | Rule |
+| --- | --- |
+| Price | A probability strictly between 0 and 1, on a 0.00001 tick |
+| Size | Whole shares |
+| Minimum order value | 1 USDC of size × price |
+| Collateral | USDC in the account's spot balance. A buy needs the USDC and a sale needs the shares |
+| Merged book | A buy of Yes at `p` and a sale of No at `1 − p` are the same bid. A buy of Yes against a buy of No mints the pair |
+| Positions | Shares are held as spot balances under the `+` coin. They are not perpetual positions and carry no margin |
+| Fills | `userFills` and the `userFills` and `orderUpdates` WebSocket channels, under the `#` coin |
+
+Hyperliquid sets the tick, the minimum and the quote asset. Its API is authoritative if any of them changes.
+
+**Through Skew**
+
+Orders matched by Skew are the same Hyperliquid orders, signed by the account or its API wallet and relayed to the same book. Fills, balances and cancels are read and sent on Hyperliquid as above. Skew provides its maker and interface specifications to integrating firms. See [Outcome liquidity](/outcome-liquidity).
+
+## Reading the oracle state
+
+The session state of the oracle can be inferred from public fields, and it is stated explicitly in the oracle feed metadata.
+
+| Observation | Inference |
+| --- | --- |
+| `oraclePx` changes tick by tick during a Shanghai session | Active passthrough |
+| `oraclePx` moves slowly toward the impact mid outside a session | Bounded discovery |
+| `oraclePx` constant outside a session with a thin book | Discovery paused. No impact price |
+| `oraclePx` steps at a session open | Reopen |
+
+The metadata fields are listed in [Oracle](/oracle).
+
+## Example: position value and premium
+
+```python
+import requests
+
+API = "https://api.hyperliquid.xyz/info"
+COIN = "io:SHCU"
+
+meta, ctxs = requests.post(API, json={"type": "metaAndAssetCtxs", "dex": "io"}).json()
+i = next(k for k, a in enumerate(meta["universe"]) if a["name"] == COIN)
+ctx = ctxs[i]
+
+oracle = float(ctx["oraclePx"])       # CNY per tonne
+mark = float(ctx["markPx"])           # CNY per tonne
+oi = float(ctx["openInterest"])       # contracts
+
+size = 20.0                           # contracts, long
+notional_usdc = abs(size) * mark      # no FX conversion
+oi_notional = oi * mark
+premium_bps = (mark / oracle - 1) * 1e4
+hourly_funding_usdc = size * oracle * float(ctx["funding"])
+
+print(f"notional      {notional_usdc:,.0f} USDC")
+print(f"mark premium  {premium_bps:+.1f} bps")
+print(f"OI            {oi_notional/1e6:,.1f}M USDC")
+print(f"funding/hour  {hourly_funding_usdc:,.2f} USDC")
+```
+
+## Rate limits in Growth Mode
+
+Hyperliquid's address-based rate limits grow with an address's traded volume. SHCU runs in Growth Mode, where volume contributes 10% of its notional toward those limits. A quoting system that relies only on SHCU volume to earn request budget accrues it at one tenth of the usual rate. See [Fees](/fees).
+
+## Testnet
+
+`scpe:SHCU` on Hyperliquid testnet runs the same oracle program and state machine for integration testing. Testnet parameters are set for calibration and can differ from the production values in this documentation. The production specification is the one published here and readable from mainnet.
+
+## Not provided
+
+Scape does not redistribute the underlying index as a data feed. The oracle values on Hyperliquid are public. Index data as a standalone product is licensed by Price Index SG.
